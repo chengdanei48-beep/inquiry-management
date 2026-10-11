@@ -1,0 +1,12 @@
+# Environment variables
+.env
+
+# Node.js
+node_modules/
+
+# SQLite(データベースファイルは Git に入れない)
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3

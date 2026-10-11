@@ -1,0 +1,13 @@
+{
+  "name": "inquiry-management",
+  "version": "0.1.0",
+  "description": "問い合わせ管理アプリ(Node.js + SQLite)",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
+}

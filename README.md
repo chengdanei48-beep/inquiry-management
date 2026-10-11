@@ -1,0 +1,19 @@
+# InquiryManagement(問い合わせ管理)
+
+問い合わせの登録・一覧・ステータス管理・担当者割当・履歴を扱うアプリ。課題として作成する。
+
+## 技術スタック
+
+- Node.js v24 以降(標準の `node:sqlite` を使用)
+- SQLite(ファイル DB)
+- HTML / 素のJavaScript
+
+課金が発生する技術・サービスは使わず、ローカルだけで動作する。
+
+## ドキュメント
+
+- [題材の選定理由](docs/selection-rationale.md)
+
+## 開発ルール
+
+[CLAUDE.md](CLAUDE.md) を参照。
