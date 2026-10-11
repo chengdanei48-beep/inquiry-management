@@ -10,3 +10,6 @@ node_modules/
 *.db-wal
 *.sqlite
 *.sqlite3
+
+# 実行時データ(DB・月次集計ファイル)
+data/
