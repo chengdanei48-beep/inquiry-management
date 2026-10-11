@@ -14,6 +14,7 @@
 
 - [題材の選定理由](docs/selection-rationale.md)
 - [要件定義書](docs/requirements.md)
+- [画面設計書(叩き台)](docs/screen-design.md)
 
 ## 開発ルール
 
