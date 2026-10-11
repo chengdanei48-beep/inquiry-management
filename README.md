@@ -13,6 +13,7 @@
 ## ドキュメント
 
 - [題材の選定理由](docs/selection-rationale.md)
+- [要件定義書](docs/requirements.md)
 
 ## 開発ルール
 
