@@ -29,6 +29,24 @@ export function append(parent, children) {
   return parent;
 }
 
+/**
+ * 自前で生成したSVGの文字列を、DOMの要素にする(innerHTML を使わない)。
+ * 値のエスケープ済みの文字列(public/js/charts.js の出力)だけを渡すこと。
+ */
+export function svgFromString(svgText) {
+  const doc = new DOMParser().parseFromString(svgText, 'image/svg+xml');
+  const root = doc.documentElement;
+  if (!root || root.nodeName !== 'svg' || doc.querySelector('parsererror')) {
+    throw new Error('SVGを解析できません');
+  }
+  // スクリプト・イベント属性は含まれないはずだが、念のため取り除く
+  root.querySelectorAll('script, foreignObject').forEach((n) => n.remove());
+  for (const el of [root, ...root.querySelectorAll('*')]) {
+    for (const attr of [...el.attributes]) if (attr.name.toLowerCase().startsWith('on')) el.removeAttribute(attr.name);
+  }
+  return document.importNode(root, true);
+}
+
 export function replace(parent, ...children) {
   parent.replaceChildren();
   append(parent, children);
