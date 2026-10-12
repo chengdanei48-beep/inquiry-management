@@ -24,5 +24,7 @@ export function loadConfig(env = process.env) {
     port,
     dbPath,
     publicDir: path.join(ROOT, 'public'),
+    // 月次集計の保存先。DBファイルと同じディレクトリの reports/(既定は data/reports/YYYY-MM/)
+    reportsDir: path.join(dbPath === ':memory:' ? path.join(ROOT, 'data') : path.dirname(dbPath), 'reports'),
   };
 }

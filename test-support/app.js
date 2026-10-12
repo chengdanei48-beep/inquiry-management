@@ -1,5 +1,7 @@
 // APIテスト用の補助(テストファイルとしては実行されない)。
 // インメモリDB・固定の時計・テスト用ポートで、アプリ全体を起動する。
+import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { openDatabase } from '../src/db/index.js';
@@ -38,9 +40,12 @@ export async function startTestApp({ now = '2026-10-12 09:00:00.000' } = {}) {
     advanceMinutes(n) { current += n * 60 * 1000; },
   };
 
+  // 月次集計の保存先(テストごとの一時ディレクトリ。終了時に削除する)
+  const reportsDir = fs.mkdtempSync(path.join(os.tmpdir(), 'inq-reports-'));
+
   const logs = [];
   const server = createServer({
-    db, config: { publicDir }, routes: createApiRoutes(), log: (l) => logs.push(l), now: clock.now,
+    db, config: { publicDir, reportsDir }, routes: createApiRoutes(), log: (l) => logs.push(l), now: clock.now,
   });
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   const base = `http://127.0.0.1:${server.address().port}`;
@@ -53,10 +58,12 @@ export async function startTestApp({ now = '2026-10-12 09:00:00.000' } = {}) {
     const res = await fetch(`${base}${urlPath}`, {
       method, headers: h, body: body === undefined ? undefined : JSON.stringify(body),
     });
-    const text = await res.text();
+    // fetch の text() は先頭の BOM を取り除くため、バイト列から復号する(CSVの BOM を検証できるように)
+    const bytes = Buffer.from(await res.arrayBuffer());
+    const text = bytes.toString('utf8');
     let json = null;
     try { json = JSON.parse(text); } catch { /* JSONでない応答 */ }
-    return { status: res.status, body: json, text, headers: res.headers };
+    return { status: res.status, body: json, text, bytes, headers: res.headers };
   }
 
   const validInquiry = {
@@ -64,14 +71,18 @@ export async function startTestApp({ now = '2026-10-12 09:00:00.000' } = {}) {
   };
 
   return {
-    db, clock, api, logs, validInquiry,
+    db, clock, api, logs, validInquiry, reportsDir,
     /** 問い合わせを登録して、詳細を返す。 */
     async create(overrides = {}, opts = {}) {
       const res = await api('POST', '/api/inquiries', { body: { ...validInquiry, ...overrides }, ...opts });
       if (res.status !== 201) throw new Error(`登録に失敗: ${res.status} ${res.text}`);
       return res.body;
     },
-    close: () => new Promise((resolve) => server.close(() => { db.close(); resolve(); })),
+    close: () => new Promise((resolve) => server.close(() => {
+      db.close();
+      fs.rmSync(reportsDir, { recursive: true, force: true });
+      resolve();
+    })),
   };
 }
 

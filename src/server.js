@@ -95,7 +95,7 @@ export function createServer({
       if (url.pathname === '/api' || url.pathname.startsWith('/api/')) {
         const matched = router.match(req.method, url.pathname);
         if (!matched) throw notFound();
-        const ctx = { req, res, db, url, now, params: matched.params, readJson: () => readJson(req) };
+        const ctx = { req, res, db, url, now, config, params: matched.params, readJson: () => readJson(req) };
         const result = await matched.handler(ctx);
         // ハンドラーが応答を終えていなければ、戻り値をJSONで返す
         if (!res.writableEnded) sendJson(res, result?.status ?? 200, result?.body ?? {});
