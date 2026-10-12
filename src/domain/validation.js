@@ -221,8 +221,8 @@ export function parseEmployee(body, { partial = false } = {}) {
   const want = (key) => !partial || has(body, key);
   if (want('name')) value.name = v.text('name', '氏名');
   if (want('department')) value.department = v.text('department', '部署');
-  // 追加時は省略できる(既定は「一般」)
-  if (want('isStaff')) value.isStaff = v.flag('isStaff', '担当者区分', { required: false });
+  // 追加時は省略できる(既定は「一般」)。編集時は、指定したなら値が必須(null で意図せず「一般」にしない)
+  if (want('isStaff')) value.isStaff = v.flag('isStaff', '担当者区分', { required: partial });
   if (partial && has(body, 'isActive')) value.isActive = v.flag('isActive', '状態');
   if (partial && Object.keys(value).length === 0) v.add('name', '変更する項目を指定してください');
   v.throwIfInvalid();
@@ -239,6 +239,27 @@ export function parseCategory(body, { partial = false } = {}) {
   if (want('sortOrder')) value.sortOrder = v.integer('sortOrder', '表示順');
   if (partial && has(body, 'isActive')) value.isActive = v.flag('isActive', '状態');
   if (partial && Object.keys(value).length === 0) v.add('name', '変更する項目を指定してください');
+  v.throwIfInvalid();
+  return value;
+}
+
+/**
+ * GET /api/employees・/api/categories の絞り込み(staff / active は '1' か '0')。
+ * 指定が無ければ undefined(絞り込まない)。
+ */
+export function parseMasterListQuery(params, keys) {
+  const q = params instanceof URLSearchParams ? Object.fromEntries(params) : { ...params };
+  const v = new FieldValidator(q);
+  const value = {};
+  for (const key of keys) {
+    const raw = q[key];
+    if (raw === undefined || raw === '') continue;
+    if (raw !== '1' && raw !== '0') {
+      v.add(key, `${key} は 1 か 0 で指定してください`);
+      continue;
+    }
+    value[key] = raw === '1';
+  }
   v.throwIfInvalid();
   return value;
 }

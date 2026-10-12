@@ -95,6 +95,7 @@ flowchart LR
 | `ASSIGNEE_REQUIRED` | 409 | 担当者を割り当ててください |
 | `COMPLETED_LOCKED` | 409 | 完了済みのため編集できません |
 | `HAS_OPEN_INQUIRIES` | 409 | 未完了の問い合わせの担当者になっているため、無効にできません(担当者区分の変更では「担当者区分を変更できません」) |
+| `DUPLICATE_NAME` | 409 | 同じ名称のカテゴリがあります |
 | `INTERNAL_ERROR` | 500 | 処理に失敗しました。時間をおいて、もう一度お試しください |
 
 ## 4. エンドポイント一覧
@@ -209,10 +210,13 @@ F-11(サンプルデータ投入)はAPIを持たず、`npm run seed`(npm スク�
 |---|---|---|
 | `POST /api/employees` | `name`、`department`(各1〜50文字)、`isStaff` | 400 |
 | `PATCH /api/employees/{id}` | `name`、`department`、`isStaff`、`isActive` | 400、404、409 `HAS_OPEN_INQUIRIES`(未完了の問い合わせの担当者になっている社員を、無効にする、または担当者区分を「一般」にしようとした場合) |
-| `POST /api/categories` | `name`(1〜50文字、重複不可)、`sortOrder` | 400、409(名称の重複) |
-| `PATCH /api/categories/{id}` | `name`、`sortOrder`、`isActive` | 400、404、409 |
+| `POST /api/categories` | `name`(1〜50文字、重複不可)、`sortOrder`(0以上の整数) | 400、409 `DUPLICATE_NAME`(無効なカテゴリとの重複を含む) |
+| `PATCH /api/categories/{id}` | `name`、`sortOrder`、`isActive` | 400、404、409 `DUPLICATE_NAME` |
 
-- 削除APIはない(無効化で扱う)。
+- 一覧は `{ "items": [...] }` で返す。社員は `staff`・`active`(`1` / `0`)、カテゴリは `active` で絞り込める。社員は ID 順、カテゴリは表示順(同じなら ID 順)。
+- 社員・カテゴリの項目は `id`、`name`、`department`・`isStaff`・`isActive`(社員)/ `sortOrder`・`isActive`(カテゴリ)。
+- 変更系(POST・PATCH)は、操作者(`X-Operator-Id`)が必須。
+- 削除APIはない(無効化で扱う)。無効なカテゴリは新規の問い合わせで選べないが、過去の問い合わせには表示される。使用中のカテゴリも無効にできる。
 
 ### 5.9 `GET /api/reports/summary?from=YYYY-MM-DD&to=YYYY-MM-DD`
 
