@@ -99,6 +99,55 @@ test('課金ルール: 外部サービス・SDK・クラウドの利用が、コ
   }
 });
 
+test('バージョン: package.json・CHANGELOG・README・起動時のログが一致し、semver である', async () => {
+  const { readVersion, APP_NAME } = await import('../src/version.js');
+  const pkg = JSON.parse(read('package.json'));
+  const version = readVersion();
+  assert.equal(version, pkg.version);
+  assert.match(version, /^\d+\.\d+\.\d+$/);
+  assert.equal(APP_NAME, '問い合わせ管理');
+  // CHANGELOG の先頭の版が、現在のバージョン
+  const latest = /^## \[(\d+\.\d+\.\d+)\]/m.exec(read('CHANGELOG.md'));
+  assert.ok(latest, 'CHANGELOG に版の見出しが無い');
+  assert.equal(latest[1], version);
+  // README のバッジと、起動時のログが、同じバージョンを示す
+  assert.ok(read('README.md').includes(`version-${version}-`), 'README のバージョンのバッジが一致しない');
+  assert.ok(read('src', 'main.js').includes('readVersion()'), '起動時のログにバージョンを出していない');
+});
+
+test('ライセンス: LICENSE(MIT)があり、package.json の license と一致する', () => {
+  const pkg = JSON.parse(read('package.json'));
+  assert.equal(pkg.license, 'MIT');
+  const license = read('LICENSE');
+  assert.match(license, /^MIT License/);
+  assert.match(license, /Copyright \(c\) \d{4} \S+/);
+  assert.match(read('README.md'), /\[MIT\]\(LICENSE\)/);
+});
+
+test('公開: 個人のメールアドレス・ローカルのパスが、リポジトリのファイルに無い', () => {
+  const skip = /(^|[\\/])(node_modules|\.git|data|e2e-output)([\\/]|$)/;
+  const files = walk(root, '')
+    .filter((f) => !skip.test(path.relative(root, f)))
+    .filter((f) => /\.(js|json|md|html|css|svg|yml|yaml|txt)$/.test(f) || path.basename(f) === 'LICENSE');
+  assert.ok(files.length > 40, `${files.length} 件しか調べていない`);
+  const patterns = [
+    // メールアドレス(GitHub の noreply・Anthropic の共同作者表記・例示用は除く)
+    /[A-Za-z0-9._%+-]+@(?!users\.noreply\.github\.com|noreply\.github\.com|anthropic\.com|example\.)[A-Za-z0-9.-]+\.[A-Za-z]{2,}/,
+    // Windows / Unix のホームディレクトリ
+    /[A-Za-z]:\\Users\\/,
+    /\/Users\/[a-z]/,
+  ];
+  const self = path.join('test', 'consistency.test.js');
+  for (const file of files) {
+    if (path.relative(root, file) === self) continue; // 検査の正規表現そのもの
+    const source = fs.readFileSync(file, 'utf8');
+    for (const re of patterns) {
+      const m = re.exec(source);
+      assert.ok(!m, `${path.relative(root, file)} に個人情報らしき文字列がある: ${m && m[0]}`);
+    }
+  }
+});
+
 test('データ保護: DBファイルと実行時データを Git に含めない設定', () => {
   const ignore = read('.gitignore');
   for (const pattern of ['data/', '*.db', 'node_modules/', '.env', 'e2e-output/']) {
