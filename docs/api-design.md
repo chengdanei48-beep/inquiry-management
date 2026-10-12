@@ -57,7 +57,7 @@ flowchart LR
 | ベースパス | `/api` |
 | 操作者 | 変更系(POST・PATCH)は、ヘッダー `X-Operator-Id` に「操作する担当者」の社員IDを指定する。有効な担当者でなければ 400 |
 | 日時 | `YYYY-MM-DD HH:mm:ss.SSS`(日本時間のローカル時刻、文字列) |
-| 同時更新 | 問い合わせの更新系は、取得時の `updatedAt` を送る。現在の値と違う場合は 409 `STALE_UPDATE` |
+| 同時更新 | 問い合わせの更新系(ステータス変更・担当者変更・編集)は、取得時の `updatedAt` を送る。現在の値と違う場合は 409 `STALE_UPDATE`。コメントの追加は `updated_at` を更新せず、競合の対象外とする |
 | 文字数 | 自由入力は50文字以内(前後の空白を除いて数える) |
 | トランザクション | 問い合わせの更新と履歴の追加は、1トランザクションで行う |
 | ポート・DB | 環境変数 `PORT`(既定 8080)、`DB_PATH`(既定 `data/inquiry.db`)で上書きできる |
@@ -94,7 +94,7 @@ flowchart LR
 | `INVALID_TRANSITION` | 409 | 現在のステータスからは変更できません |
 | `ASSIGNEE_REQUIRED` | 409 | 担当者を割り当ててください |
 | `COMPLETED_LOCKED` | 409 | 完了済みのため編集できません |
-| `HAS_OPEN_INQUIRIES` | 409 | 未完了の問い合わせの担当者になっているため、無効にできません |
+| `HAS_OPEN_INQUIRIES` | 409 | 未完了の問い合わせの担当者になっているため、無効にできません(担当者区分の変更では「担当者区分を変更できません」) |
 | `INTERNAL_ERROR` | 500 | 処理に失敗しました。時間をおいて、もう一度お試しください |
 
 ## 4. エンドポイント一覧
@@ -201,14 +201,14 @@ F-11(サンプルデータ投入)はAPIを持たず、`npm run seed`(npm スク�
 
 ### 5.7 `POST /api/inquiries/{id}/comments`(コメント)
 
-`text`(必須、1〜50文字)。完了済みでも追加できる。コメントは競合の対象外(`updatedAt` は不要)。
+`text`(必須、1〜50文字)。完了済みでも追加できる。コメントは競合の対象外(`updatedAt` は不要)で、問い合わせの `updated_at` も更新しない(他の担当者のコメントのせいで、ステータス変更が 409 にならないようにするため)。履歴にだけ追加する。
 
 ### 5.8 マスタ
 
 | API | 主な入力 | 主なエラー |
 |---|---|---|
 | `POST /api/employees` | `name`、`department`(各1〜50文字)、`isStaff` | 400 |
-| `PATCH /api/employees/{id}` | `name`、`department`、`isStaff`、`isActive` | 400、404、409 `HAS_OPEN_INQUIRIES`(未完了の問い合わせの担当者を無効にしようとした場合) |
+| `PATCH /api/employees/{id}` | `name`、`department`、`isStaff`、`isActive` | 400、404、409 `HAS_OPEN_INQUIRIES`(未完了の問い合わせの担当者になっている社員を、無効にする、または担当者区分を「一般」にしようとした場合) |
 | `POST /api/categories` | `name`(1〜50文字、重複不可)、`sortOrder` | 400、409(名称の重複) |
 | `PATCH /api/categories/{id}` | `name`、`sortOrder`、`isActive` | 400、404、409 |
 
@@ -332,7 +332,7 @@ sequenceDiagram
 ```mermaid
 erDiagram
   employees ||--o{ inquiries : "依頼者"
-  employees ||--o{ inquiries : "担当者"
+  employees |o--o{ inquiries : "担当者(未割当あり)"
   categories ||--o{ inquiries : "分類"
   inquiries ||--o{ inquiry_histories : "履歴"
   employees ||--o{ inquiry_histories : "操作者"
@@ -381,6 +381,8 @@ erDiagram
 
 ### 7.2 テーブル定義
 
+文字数の制約(「1〜50文字」)は、`CHECK(length(trim(列)) BETWEEN 1 AND 50)` で表す。SQLite の `length()` は TEXT の文字数を数える。APIは、保存する前に前後の空白を取り除く。`is_staff`・`is_active` は `CHECK(列 IN (0, 1))`。
+
 #### employees(社員)
 
 | 列 | 型 | 制約 | 内容 |
@@ -420,8 +422,14 @@ erDiagram
 | work_minutes | INTEGER | NULL可 | 対応時間(分)。完了時に計算して保存する |
 
 追加の整合性(CHECK):
-- 担当者は、ステータスが「未対応」以外では必須。
-- ステータスが「完了」のとき、`resolution`、`completed_at`、`work_minutes` は必須。
+- 担当者は、ステータスが「未対応」以外では必須: `CHECK(status = '未対応' OR assignee_id IS NOT NULL)`
+- 完了と、完了関連の列は一対一に対応する(完了以外では空、完了では必須):
+  `CHECK((status = '完了') = (completed_at IS NOT NULL AND resolution IS NOT NULL AND work_minutes IS NOT NULL))`、かつ `CHECK(status = '完了' OR (completed_at IS NULL AND resolution IS NULL AND work_minutes IS NULL))`
+- 関連する問い合わせは自分自身を指せない: `CHECK(related_inquiry_id IS NULL OR related_inquiry_id <> id)`
+- 対応時間は0以上: `CHECK(work_minutes IS NULL OR work_minutes >= 0)`
+- 日時列(`received_at`、`updated_at`、`completed_at`)の形式: `CHECK(received_at GLOB '[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9] [0-2][0-9]:[0-5][0-9]:[0-5][0-9].[0-9][0-9][0-9]')`(他の日時列も同様。`completed_at` は NULL を許す)
+
+`assignee_id` が「担当者区分(`is_staff = 1`)の有効な社員」であることは、外部キーでは保証できないため、APIで検証する(5.5)。担当者区分を「一般」にする、または無効にするときは、未完了の問い合わせの担当者になっていないかをAPIで確認する(5.8)。
 
 #### inquiry_histories(対応履歴)
 
@@ -441,7 +449,7 @@ erDiagram
 | 索引 | 目的 |
 |---|---|
 | `inquiries(status)` | 一覧のステータス絞り込み、A-06 |
-| `inquiries(received_at)` | 並び順、期間指定、A-05 |
+| `inquiries(received_at, id)` | 並び順(受付日時、同時刻はIDで順序を固定)、期間指定、A-05 |
 | `inquiries(assignee_id, status)` | 担当者別の集計、無効化の可否判定 |
 | `inquiries(category_id)` | A-01、A-03 |
 | `inquiry_histories(inquiry_id, at)` | 詳細の履歴表示、保留期間の算出 |
@@ -450,6 +458,11 @@ erDiagram
 - 外部キー制約を有効にする(`PRAGMA foreign_keys = ON`)。
 - 物理削除はしない。社員・カテゴリは `is_active` で無効化する。
 - DBファイル(`*.db`)と `data/` は Git に含めない。初回起動時にテーブルを自動作成する。
+- スキーマの版は `PRAGMA user_version` で持つ(初版は 1)。起動時に版を確認し、未作成なら作成する。
+- 書き込みが重なったときに待てるよう、`PRAGMA busy_timeout`(例: 3000ミリ秒)を設定する。
+- 一覧の並びは「受付日時 → ID」の順(同じ時刻でも順序が変わらない)。
+- コメントの追加は、履歴だけを追加し、`inquiries.updated_at` は更新しない。ステータス変更・担当者変更・編集では更新する。
+- 日時はアプリが `YYYY-MM-DD HH:mm:ss.SSS`(日本時間)で生成して保存する。DBの `CURRENT_TIMESTAMP`(UTC)は使わない。
 
 ## 8. 要件との対応
 

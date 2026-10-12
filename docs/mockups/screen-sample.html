@@ -398,7 +398,9 @@ function viewDetail(id) {
     h("div", { class: "actions" }, h("button", { onclick: () => {
       if (!needOperator()) return;
       if (!checkText("c-text", "コメント", true)) { focusFirstError(); return; }
-      log("コメント: " + $("c-text").value.trim()); showMessage("コメントを追加しました", "ok"); render(false);
+      // コメントは履歴だけに追加し、更新日時は更新しない(競合の対象外)
+      i.history.push({ at: nowText(), by: operatorId(), text: "コメント: " + $("c-text").value.trim() });
+      showMessage("コメントを追加しました", "ok"); render(false);
     } }, "追加")));
   comment.querySelector("#c-text").addEventListener("input", (e) => { $("c-text-c").textContent = `${[...e.target.value].length}/50`; });
 
@@ -588,6 +590,9 @@ function viewMasters() {
           const a = $("m-a").value.trim(), b = $("m-b").value.trim();
           if (!a || [...a].length > 50 || (isEmp && (!b || [...b].length > 50)) || (!isEmp && !b)) {
             showMessage([...a].length > 50 || [...b].length > 50 ? "50文字以内で入力してください" : "必須項目を入力してください", "error"); return;
+          }
+          if (isEmp && row.staff && $("m-c").value !== "1" && unfinishedAssignee(row.id)) {
+            showMessage("未完了の問い合わせの担当者になっているため、担当者区分を変更できません", "error"); return;
           }
           if (isEmp) { row.name = a; row.dept = b; row.staff = $("m-c").value === "1"; } else { row.name = a; row.order = Number(b); }
           editingRow = null; showMessage("保存しました", "ok"); renderOperator(); render(false);
