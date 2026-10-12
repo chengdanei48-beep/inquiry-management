@@ -66,9 +66,9 @@ export function validateRange(from, to) {
 }
 
 /** 集計期間の上限(年)。極端に広い期間で、集計や画面が重くならないようにする。 */
-export const MAX_RANGE_YEARS = 10;
+export const MAX_RANGE_YEARS = 20;
 // 文言は、画面設計書 2.3 と一致させる(test/consistency.test.js が、設計書の文言がコードにあることを確認する)
-export const RANGE_TOO_WIDE_MESSAGE = '集計期間は10年以内にしてください';
+export const RANGE_TOO_WIDE_MESSAGE = '集計期間は20年以内にしてください';
 
 /** 開始日から MAX_RANGE_YEARS 年を超える期間か(どちらも実在する日付であること)。 */
 export function exceedsMaxRange(from, to) {

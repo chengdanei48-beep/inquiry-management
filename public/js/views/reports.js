@@ -15,7 +15,7 @@ const dateInput = (value) => h('input', { type: 'date', value });
 
 export async function renderReports(ctx, route) {
   let range = parseReportRange(route.search);
-  // URLを手で書き換えた不正な期間(開始日が終了日より後・10年超)は、案内を出して、既定の期間に戻す
+  // URLを手で書き換えた不正な期間(開始日が終了日より後・20年超)は、案内を出して、既定の期間に戻す
   const rangeErrors = validateRange(range.from, range.to);
   const rangeError = rangeErrors.from || rangeErrors.to;
   if (rangeError) {

@@ -150,18 +150,18 @@ test('集計: 期間の指定が不正なら 400', () => withApp(async (app) => 
   }
 }));
 
-test('集計: 期間が10年を超えると 400(10年ちょうどは受理)。極端に広い期間でも、すぐに応答する', () => withApp(async (app) => {
-  const ok = await app.api('GET', '/api/reports/summary?from=2016-10-12&to=2026-10-12', { operator: null });
+test('集計: 期間が20年を超えると 400(20年ちょうどは受理)。極端に広い期間でも、すぐに応答する', () => withApp(async (app) => {
+  const ok = await app.api('GET', '/api/reports/summary?from=2006-10-12&to=2026-10-12', { operator: null });
   assert.equal(ok.status, 200);
-  assert.equal(ok.body.a05.length, 121); // 2016/10 〜 2026/10
+  assert.equal(ok.body.a05.length, 241); // 2006/10 〜 2026/10
 
-  const over = await app.api('GET', '/api/reports/summary?from=2016-10-11&to=2026-10-12', { operator: null });
+  const over = await app.api('GET', '/api/reports/summary?from=2006-10-11&to=2026-10-12', { operator: null });
   assert.equal(over.status, 400);
-  assert.deepEqual(over.body.error.fields, [{ field: 'to', message: '集計期間は10年以内にしてください' }]);
+  assert.deepEqual(over.body.error.fields, [{ field: 'to', message: '集計期間は20年以内にしてください' }]);
 
-  // うるう日の開始(2020-02-29 の10年後は 2030-03-01)
-  assert.equal((await app.api('GET', '/api/reports/summary?from=2020-02-29&to=2030-03-01', { operator: null })).status, 200);
-  assert.equal((await app.api('GET', '/api/reports/summary?from=2020-02-29&to=2030-03-02', { operator: null })).status, 400);
+  // うるう日の開始(2080-02-29 の20年後の 2100年は、うるう年ではないため 2100-03-01)
+  assert.equal((await app.api('GET', '/api/reports/summary?from=2080-02-29&to=2100-03-01', { operator: null })).status, 200);
+  assert.equal((await app.api('GET', '/api/reports/summary?from=2080-02-29&to=2100-03-02', { operator: null })).status, 400);
 
   // 以前は 0100〜9999年の指定で、集計に約34秒かかり、サーバー全体が止まっていた
   const started = Date.now();

@@ -65,6 +65,11 @@ test(`性能: ${COUNT}件の問い合わせで、一覧・検索・集計・CSV�
     const summary = await timed('集計(A-01〜A-06、1年分)', () => get('/api/reports/summary?from=2026-01-01&to=2026-12-31'), t);
     assert.equal(summary.body.a06.reduce((sum, r) => sum + r.count, 0), COUNT);
 
+    // 集計期間の上限(20年 = 240か月)でも、1秒以内に返る
+    const widest = await timed('集計(上限の20年)', () => get('/api/reports/summary?from=2007-01-01&to=2026-12-31'), t);
+    assert.equal(widest.body.a05.length, 240);
+    assert.equal(widest.body.a06.reduce((sum, r) => sum + r.count, 0), COUNT);
+
     const csv = await timed('一覧CSV(全件)', () => get('/api/inquiries/export.csv'), t);
     assert.equal(csv.text.slice(1).trimEnd().split('\r\n').length, COUNT + 1);
 
