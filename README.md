@@ -10,6 +10,15 @@
 
 課金が発生する技術・サービスは使わず、ローカルだけで動作する。
 
+## 起動とテスト
+
+```
+npm start     # http://localhost:8080/ で起動(localhost のみ)
+npm test      # 自動テスト
+```
+
+環境変数 `PORT`(既定 8080)、`DB_PATH`(既定 `data/inquiry.db`)で上書きできる。初回起動時にDBとテーブルを自動で作成する。
+
 ## ドキュメント
 
 - [題材の選定理由](docs/selection-rationale.md)
