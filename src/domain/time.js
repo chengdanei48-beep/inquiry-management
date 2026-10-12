@@ -24,6 +24,26 @@ export function formatDateTime(date = new Date()) {
   );
 }
 
+/** エポックミリ秒(壁時計の値を UTC とみなしたもの)を 'YYYY-MM-DD HH:mm:ss.SSS' にする。 */
+export function formatEpoch(ms) {
+  const d = new Date(ms);
+  return (
+    `${pad(d.getUTCFullYear(), 4)}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ` +
+    `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}.${pad(d.getUTCMilliseconds(), 3)}`
+  );
+}
+
+/**
+ * 更新日時として使う値を返す。now が previous より後ならそのまま、そうでなければ
+ * previous の1ミリ秒後にする。更新日時を必ず増やし、同じ値で別の更新が
+ * 競合を見逃さないようにする(楽観ロックの確実な検出のため)。
+ */
+export function laterOf(now, previous) {
+  const n = parseDateTime(now);
+  const p = parseDateTime(previous);
+  return n > p ? now : formatEpoch(p + 1);
+}
+
 /** 'YYYY-MM-DD HH:mm:ss.SSS' の形で、実在する日時か。 */
 export function isDateTimeString(value) {
   try {

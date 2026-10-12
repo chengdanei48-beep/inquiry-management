@@ -1,10 +1,11 @@
 import { loadConfig } from './config.js';
 import { openDatabase } from './db/index.js';
 import { createServer } from './server.js';
+import { createApiRoutes } from './api/index.js';
 
 const config = loadConfig();
 const db = openDatabase(config.dbPath);
-const server = createServer({ db, config });
+const server = createServer({ db, config, routes: createApiRoutes() });
 
 server.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {

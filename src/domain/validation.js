@@ -132,6 +132,28 @@ export class FieldValidator {
 
 const CATEGORY_LABEL = 'カテゴリ';
 
+/**
+ * GET /api/inquiries のクエリ(一覧・CSV で共通)。
+ * @param {URLSearchParams|object} params
+ */
+export function parseInquiryListQuery(params) {
+  const q = params instanceof URLSearchParams ? Object.fromEntries(params) : { ...params };
+  const v = new FieldValidator(q);
+  const value = {
+    status: v.choice('status', 'ステータス', STATUSES, { required: false }),
+    categoryId: v.id('categoryId', CATEGORY_LABEL, { required: false }),
+    // 'none' は「未割当」
+    assigneeId: q.assigneeId === 'none' ? 'none' : v.id('assigneeId', '担当者', { required: false }),
+    dept: v.text('dept', '部署', { required: false }),
+    q: v.text('q', 'キーワード', { required: false }),
+    sort: v.choice('sort', '並び替え', ['received', 'priority'], { required: false }) ?? 'received',
+    dir: v.choice('dir', '並び順', ['asc', 'desc'], { required: false }) ?? 'desc',
+    page: v.id('page', 'ページ', { required: false }) ?? 1,
+  };
+  v.throwIfInvalid();
+  return value;
+}
+
 /** POST /api/inquiries */
 export function parseInquiryCreate(body) {
   const v = new FieldValidator(body);
