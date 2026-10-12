@@ -71,6 +71,7 @@ Chrome を操作して、全画面の操作・入力検証・エラー表示・�
 | [画面設計書](docs/screen-design.md) | 画面・項目・操作・メッセージ。[画面サンプル](docs/mockups/screen-sample.html)(Chromeで開いて確認する) |
 | [API設計・DB定義](docs/api-design.md) | エンドポイント・エラー・DB定義(正)。[説明用の図解](docs/mockups/api-overview.html)(Chromeで開いて確認する) |
 | [受け入れ条件の照合表](docs/acceptance-check.md) | 受け入れ条件と、検証の根拠(テスト・実ブラウザ確認)の対応 |
+| [判断記録: コンテナ化・デプロイ](docs/deployment-decision.md) | コンテナ化・デプロイを行わない理由と、必要になる場合の変更 |
 
 ## 構成
 
