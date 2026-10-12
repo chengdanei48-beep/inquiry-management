@@ -1,5 +1,7 @@
 # InquiryManagement(問い合わせ管理)
 
+[![version](https://img.shields.io/badge/version-1.0.0-blue)](CHANGELOG.md) [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 社内ヘルプデスクに寄せられる問い合わせを、登録・一覧・ステータス管理・担当者割当・履歴で管理し、対応実績を集計・分析するアプリ。課題として作成した。
 
 ## 特徴
@@ -86,6 +88,20 @@ scripts/        npm run seed / npm run e2e
 test/           自動テスト(node --test)
 docs/           設計書
 ```
+
+## バージョンとライセンス
+
+- バージョン: **1.0.0**([変更履歴](CHANGELOG.md))。バージョンは `package.json` の `version` が正で、起動時のログにも表示される([Semantic Versioning](https://semver.org/lang/ja/) に従う)。
+- ライセンス: [MIT](LICENSE)
+
+## 利用上の注意
+
+- 認証を持たない。**「操作する担当者」は、選ぶだけの簡易方式**で、なりすましを防げない。そのため、サーバーは `localhost` のみで待ち受ける。インターネットやLANに公開して運用しない(理由と、必要になる場合の変更は [判断記録](docs/deployment-decision.md))。
+- コンテナ化・サーバーへのデプロイは、行っていない。
+
+## 公開版について
+
+この公開リポジトリは、開発用の非公開リポジトリの最終状態を、**履歴を含まない1つのコミット**として公開したもの。開発は、Issue → 専用ブランチ → プルリクエストの流れで行い、その経緯(Issue・PR)は非公開リポジトリにある。
 
 ## 開発ルール
 

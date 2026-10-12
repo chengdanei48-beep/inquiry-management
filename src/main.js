@@ -2,6 +2,7 @@ import { loadConfig } from './config.js';
 import { openDatabase } from './db/index.js';
 import { ensureInitialCategories } from './db/initial.js';
 import { createServer } from './server.js';
+import { APP_NAME, readVersion } from './version.js';
 import { createApiRoutes } from './api/index.js';
 
 const config = loadConfig();
@@ -20,7 +21,7 @@ server.on('error', (err) => {
 });
 
 server.listen(config.port, config.host, () => {
-  console.log(`起動しました: http://localhost:${server.address().port}/ (DB: ${config.dbPath})`);
+  console.log(`起動しました: ${APP_NAME} v${readVersion()} http://localhost:${server.address().port}/ (DB: ${config.dbPath})`);
 });
 
 function shutdown() {

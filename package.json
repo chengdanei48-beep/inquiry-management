@@ -1,8 +1,9 @@
 {
   "name": "inquiry-management",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "問い合わせ管理アプリ(Node.js + SQLite)",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "engines": {
     "node": ">=24"
