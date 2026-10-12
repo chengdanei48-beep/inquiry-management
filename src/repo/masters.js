@@ -43,6 +43,11 @@ export function updateEmployee(db, id, v) {
     .run(v.name, v.department, v.isStaff ? 1 : 0, v.isActive ? 1 : 0, id);
 }
 
+/** 有効な「担当者」区分の社員の人数。 */
+export function countActiveStaff(db) {
+  return db.prepare('SELECT count(*) AS n FROM employees WHERE is_staff = 1 AND is_active = 1').get().n;
+}
+
 /** 未完了(未対応・対応中・保留)の問い合わせの担当者になっている件数。 */
 export function countOpenAssigned(db, employeeId) {
   return db

@@ -122,7 +122,7 @@ flowchart LR
 | | GET | `/api/reports/monthly` | 保存済み月の一覧 | F-13 | 200 |
 | | GET | `/api/reports/monthly/{month}/{file}` | 保存済みファイルのダウンロード | F-13 | 200 |
 
-F-11(サンプルデータ投入)はAPIを持たず、`npm run seed`(npm スクリプト)で実行する。
+F-11(サンプルデータ投入)はAPIを持たず、`npm run seed`(npm スクリプト)で実行する。社員または問い合わせが既にあるDBには何もしない。カテゴリの初期値(5種)は、アプリの起動時に、カテゴリが1件も無い場合だけ作成する。
 
 ## 5. 主要APIの詳細
 
@@ -215,7 +215,7 @@ F-11(サンプルデータ投入)はAPIを持たず、`npm run seed`(npm スク�
 
 - 一覧は `{ "items": [...] }` で返す。社員は `staff`・`active`(`1` / `0`)、カテゴリは `active` で絞り込める。社員は ID 順、カテゴリは表示順(同じなら ID 順)。
 - 社員・カテゴリの項目は `id`、`name`、`department`・`isStaff`・`isActive`(社員)/ `sortOrder`・`isActive`(カテゴリ)。
-- 変更系(POST・PATCH)は、操作者(`X-Operator-Id`)が必須。
+- 変更系(POST・PATCH)は、操作者(`X-Operator-Id`)が必須。ただし初期セットアップのため、有効な「担当者」区分の社員が1人もいない間だけ、`POST /api/employees` は操作者なしで受け付ける(最初の担当者を登録できるようにする)。
 - 削除APIはない(無効化で扱う)。無効なカテゴリは新規の問い合わせで選べないが、過去の問い合わせには表示される。使用中のカテゴリも無効にできる。
 
 ### 5.9 `GET /api/reports/summary?from=YYYY-MM-DD&to=YYYY-MM-DD`
