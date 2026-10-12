@@ -28,9 +28,10 @@ function seedMasters(db) {
   cat.run('廃止カテゴリ', 4, 0);
 }
 
-export async function startTestApp({ now = '2026-10-12 09:00:00.000' } = {}) {
+/** masters: false にすると、社員・カテゴリを登録しない空のDBで起動する(初期セットアップ・サンプルデータのテスト用)。 */
+export async function startTestApp({ now = '2026-10-12 09:00:00.000', masters = true } = {}) {
   const db = openDatabase(':memory:');
-  seedMasters(db);
+  if (masters) seedMasters(db);
 
   // 固定の時計。set / advance で進める
   let current = parseDateTime(now);

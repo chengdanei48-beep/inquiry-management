@@ -3,7 +3,7 @@ import { conflict, notFound } from '../http/errors.js';
 import { transaction } from '../db/transaction.js';
 import { parseCategory, parseEmployee, parseMasterListQuery } from '../domain/validation.js';
 import {
-  categoryNameExists, countOpenAssigned, getCategory, getEmployee, insertCategory, insertEmployee,
+  categoryNameExists, countActiveStaff, countOpenAssigned, getCategory, getEmployee, insertCategory, insertEmployee,
   listCategories, listEmployees, updateCategory, updateEmployee,
 } from '../repo/masters.js';
 import { requireOperator } from './operator.js';
@@ -31,7 +31,9 @@ export const masterRoutes = [
     method: 'POST',
     path: '/api/employees',
     handler: async ({ db, req, readJson }) => {
-      requireOperator(db, req);
+      // 初期セットアップ: 有効な担当者が1人もいない間だけ、操作者なしで社員を追加できる
+      // (でないと、誰も操作者になれず、最初の担当者を登録できない)。担当者がいれば、操作者が必須。
+      if (countActiveStaff(db) > 0) requireOperator(db, req);
       const input = parseEmployee(await readJson());
       const id = insertEmployee(db, input);
       return { status: 201, body: getEmployee(db, id) };

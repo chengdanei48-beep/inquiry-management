@@ -1,10 +1,12 @@
 import { loadConfig } from './config.js';
 import { openDatabase } from './db/index.js';
+import { ensureInitialCategories } from './db/initial.js';
 import { createServer } from './server.js';
 import { createApiRoutes } from './api/index.js';
 
 const config = loadConfig();
 const db = openDatabase(config.dbPath);
+ensureInitialCategories(db); // カテゴリの初期値(F-09)。カテゴリが空のときだけ作成する
 const server = createServer({ db, config, routes: createApiRoutes() });
 
 server.on('error', (err) => {

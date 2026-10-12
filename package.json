@@ -9,6 +9,7 @@
   },
   "scripts": {
     "start": "node src/main.js",
+    "seed": "node scripts/seed.js",
     "test": "node --test"
   }
 }
