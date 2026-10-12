@@ -421,6 +421,25 @@ test('編集: 入力不備・無効なカテゴリは 400、完了済みは 409 
   assert.equal(row(app, d.id).title, 'VPNに接続できない');
 }));
 
+test('編集: 後からカテゴリが無効になった問い合わせも、カテゴリを変えなければ編集できる', () => withApp(async (app) => {
+  const d = await app.create({ categoryId: 3 });
+  await app.api('PATCH', '/api/categories/3', { body: { isActive: false } });
+  app.clock.advanceMinutes(1);
+  // 画面は、現在のカテゴリ(無効)も一緒に送る
+  const same = await app.api('PATCH', `/api/inquiries/${d.id}`, { body: { title: '件名だけ変更', categoryId: 3, updatedAt: d.updatedAt } });
+  assert.equal(same.status, 200);
+  assert.equal(same.body.title, '件名だけ変更');
+  assert.equal(same.body.category.id, 3);
+  // 別の「無効な」カテゴリへの変更は、拒否される(無効なカテゴリには変更できない)
+  const toInactive = await app.api('PATCH', `/api/inquiries/${d.id}`, { body: { categoryId: 4, updatedAt: same.body.updatedAt } });
+  assert.equal(toInactive.status, 400);
+  assert.equal(toInactive.body.error.fields[0].field, 'categoryId');
+  // 有効なカテゴリへは変更できる
+  const toActive = await app.api('PATCH', `/api/inquiries/${d.id}`, { body: { categoryId: 1, updatedAt: same.body.updatedAt } });
+  assert.equal(toActive.status, 200);
+  assert.equal(toActive.body.category.id, 1);
+}));
+
 // ---------- コメント(POST /api/inquiries/{id}/comments) ----------
 
 test('コメント: 201 で履歴に追加され、完了後も追加できる', () => withApp(async (app) => {

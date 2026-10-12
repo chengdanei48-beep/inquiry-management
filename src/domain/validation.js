@@ -2,6 +2,7 @@
 // DBに依存しない検証だけを行う。存在確認(社員・カテゴリが有効か等)は API 側で行う。
 import { validationError } from '../http/errors.js';
 import { PRIORITIES, STATUSES } from './status.js';
+import { exceedsMaxRange, RANGE_TOO_WIDE_MESSAGE } from '../../public/js/dates.js';
 import { isDateTimeString } from './time.js';
 
 /** 自由入力の文字数上限(問い合わせ・コメント・氏名・部署・カテゴリ名など)。 */
@@ -282,6 +283,8 @@ export function parseDateRange(query) {
   const from = check('from', '開始日');
   const to = check('to', '終了日');
   if (from && to && from > to) v.add('from', '開始日は終了日以前の日付にしてください');
+  // 極端に広い期間は、集計が重くなるため拒否する(画面と同じ上限)
+  else if (from && to && exceedsMaxRange(from, to)) v.add('to', RANGE_TOO_WIDE_MESSAGE);
   v.throwIfInvalid();
   return { from, to };
 }

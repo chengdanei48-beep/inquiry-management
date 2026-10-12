@@ -29,9 +29,14 @@ export function createRouter(routes = []) {
         const m = route.regex.exec(pathname);
         if (!m) continue;
         const params = {};
-        route.names.forEach((name, i) => {
-          params[name] = decodeURIComponent(m[i + 1]);
-        });
+        try {
+          route.names.forEach((name, i) => {
+            params[name] = decodeURIComponent(m[i + 1]);
+          });
+        } catch {
+          // 不正なパーセントエンコード(例: %ZZ)は、存在しないパスとして扱う(404)
+          return null;
+        }
         return { handler: route.handler, params };
       }
       return null;

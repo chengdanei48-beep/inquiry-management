@@ -1,7 +1,7 @@
 // S-04 集計(docs/screen-design.md 6章)。
 import { renderReportChart } from '../charts.js';
 import { formField, textInput } from '../components.js';
-import { formatMonth, parseReportRange, previousMonth, validateRange } from '../dates.js';
+import { defaultRange, formatMonth, parseReportRange, previousMonth, validateRange } from '../dates.js';
 import { h, replace, svgFromString } from '../dom.js';
 import { formatDateTime } from '../format.js';
 import { describeError, fieldErrors, NO_DATA_MESSAGE } from '../messages.js';
@@ -14,7 +14,14 @@ function rangeHash(from, to) {
 const dateInput = (value) => h('input', { type: 'date', value });
 
 export async function renderReports(ctx, route) {
-  const range = parseReportRange(route.search);
+  let range = parseReportRange(route.search);
+  // URLを手で書き換えた不正な期間(開始日が終了日より後・10年超)は、案内を出して、既定の期間に戻す
+  const rangeErrors = validateRange(range.from, range.to);
+  const rangeError = rangeErrors.from || rangeErrors.to;
+  if (rangeError) {
+    range = defaultRange();
+    ctx.message(rangeError, 'error');
+  }
   const [summary, monthly] = await Promise.all([
     ctx.api.getSummary(range.from, range.to),
     ctx.api.listMonthly(),

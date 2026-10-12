@@ -94,6 +94,13 @@ test('静的ファイル: GET・HEAD 以外は 404', async () => {
   assert.equal(res.status, 404);
 });
 
+test('API: JSON応答にも X-Content-Type-Options: nosniff が付く', async () => {
+  const ok = await fetch(`${base}/api/_test/ok`);
+  assert.equal(ok.headers.get('x-content-type-options'), 'nosniff');
+  const err = await fetch(`${base}/api/unknown`);
+  assert.equal(err.headers.get('x-content-type-options'), 'nosniff');
+});
+
 test('API: 未定義のパスは 404 NOT_FOUND(JSON)', async () => {
   const res = await fetch(`${base}/api/unknown`);
   assert.equal(res.status, 404);
