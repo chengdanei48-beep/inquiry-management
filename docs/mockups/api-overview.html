@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>API・DB設計 説明資料</title>
+<style>
+  :root {
+    --bg: #f5f6f8; --panel: #fff; --text: #1f2933; --muted: #5f6b7a; --border: #cfd6df;
+    --accent: #1d4ed8; --get: #067647; --post: #1d4ed8; --patch: #b54708;
+    --box: #eef2ff; --box-line: #3b6fd8; --warn: #b42318;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.7 "Yu Gothic UI", "Meiryo", sans-serif; }
+  header.top { background: #1e3a8a; color: #fff; padding: 20px 24px; }
+  header.top h1 { margin: 0; font-size: 22px; }
+  header.top p { margin: 4px 0 0; font-size: 13px; opacity: .9; }
+  nav.toc { background: var(--panel); border-bottom: 1px solid var(--border); padding: 8px 24px; display: flex; gap: 6px; flex-wrap: wrap; position: sticky; top: 0; z-index: 2; }
+  nav.toc a { padding: 4px 10px; border-radius: 4px; color: var(--text); text-decoration: none; font-size: 13px; }
+  nav.toc a:hover { background: #eef2ff; }
+  main { max-width: 1040px; margin: 0 auto; padding: 24px; }
+  section { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 20px 24px; margin-bottom: 24px; }
+  h2 { font-size: 19px; margin: 0 0 4px; padding-left: 10px; border-left: 5px solid var(--accent); }
+  h3 { font-size: 15px; margin: 20px 0 6px; }
+  p.lead { color: var(--muted); margin: 0 0 14px; }
+  svg { width: 100%; height: auto; border: 1px solid var(--border); border-radius: 4px; background: #fff; }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; margin: 6px 0 12px; }
+  th, td { border: 1px solid var(--border); padding: 5px 9px; text-align: left; vertical-align: top; }
+  th { background: #f0f3f7; }
+  td.c, th.c { text-align: center; }
+  .m { display: inline-block; min-width: 54px; text-align: center; padding: 0 6px; border-radius: 3px; color: #fff; font-weight: 700; font-size: 12px; }
+  .m.GET { background: var(--get); } .m.POST { background: var(--post); } .m.PATCH { background: var(--patch); }
+  code { background: #f0f3f7; padding: 1px 5px; border-radius: 3px; font-size: 13px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .note { background: #fff7d6; border: 1px solid #e6d58a; border-radius: 4px; padding: 8px 12px; font-size: 13px; }
+  pre { background: #1f2933; color: #e6edf3; padding: 12px 16px; border-radius: 4px; overflow: auto; font-size: 13px; line-height: 1.5; }
+  @media print { nav.toc { display: none; } section { break-inside: avoid; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>問い合わせ管理 API・DB設計 説明資料</h1>
+  <p>社内ヘルプデスク向け / Node.js + SQLite + HTML・素のJavaScript / ローカルのみで動作。仕様の正は docs/api-design.md です(この資料は説明用の図解)。</p>
+</header>
+<nav class="toc" aria-label="目次">
+  <a href="#overview">1 全体像</a><a href="#screens">2 画面とAPI</a><a href="#common">3 共通仕様</a><a href="#endpoints">4 エンドポイント</a>
+  <a href="#state">5 ステータス遷移</a><a href="#seq">6 処理の流れ</a><a href="#calc">7 対応時間の計算</a><a href="#er">8 ER図</a><a href="#trace">9 要件との対応</a>
+</nav>
+<main>
+  <section id="overview">
+    <h2>1 全体像</h2>
+    <p class="lead">画面(ブラウザ)→ API → SQLite の3層。外部サービスは使わず、すべてローカルで動きます。</p>
+    <div id="fig-overview"></div>
+  </section>
+
+  <section id="screens">
+    <h2>2 画面とAPIの対応</h2>
+    <p class="lead">5つの画面が、どのAPIを呼ぶか。</p>
+    <div id="tbl-screens"></div>
+  </section>
+
+  <section id="common">
+    <h2>3 共通仕様とエラー</h2>
+    <div class="grid2">
+      <div><h3>共通仕様</h3><div id="tbl-common"></div></div>
+      <div><h3>ステータスコード</h3><div id="tbl-codes"></div></div>
+    </div>
+    <h3>エラーコードと画面での表示</h3>
+    <div id="tbl-errors"></div>
+    <h3>エラー応答の形式</h3>
+    <pre>{ "error": { "code": "VALIDATION_ERROR", "message": "入力内容を確認してください",
+             "fields": [{ "field": "title", "message": "件名は50文字以内で入力してください" }] } }</pre>
+  </section>
+
+  <section id="endpoints">
+    <h2>4 エンドポイント一覧</h2>
+    <p class="lead">19本。機能ID(F-xx / A-xx)は要件定義書のIDです。</p>
+    <div id="tbl-endpoints"></div>
+    <p class="note">F-11(サンプルデータ投入)は画面もAPIも持たず、npm スクリプトで実行します。</p>
+  </section>
+
+  <section id="state">
+    <h2>5 ステータス遷移</h2>
+    <p class="lead">「完了」は最終状態です。再度の対応が必要な場合は、新規の問い合わせとして登録します(関連IDで元の問い合わせとつなげられます)。</p>
+    <div id="fig-state"></div>
+    <div id="tbl-state"></div>
+  </section>
+
+  <section id="seq">
+    <h2>6 処理の流れ</h2>
+    <h3>6.1 完了にする(検証と結果の分岐)</h3>
+    <div id="fig-seq1"></div>
+    <h3>6.2 同時更新の検出(楽観ロック)</h3>
+    <p class="lead">画面を開いた時点の <code>updatedAt</code> を送り、現在の値と違えば 409 で拒否します。</p>
+    <div id="fig-seq2"></div>
+  </section>
+
+  <section id="calc">
+    <h2>7 対応時間の計算(営業時間・保留除外)</h2>
+    <p class="lead">営業時間は平日 9:00〜18:00。例: 金曜 16:30 受付 → 月曜 9:00〜13:00 は保留 → 火曜 10:00 完了。</p>
+    <div id="fig-calc"></div>
+    <div id="tbl-calc"></div>
+  </section>
+
+  <section id="er">
+    <h2>8 ER図とテーブル</h2>
+    <p class="lead">4テーブル。物理削除はせず、社員・カテゴリは有効フラグで無効化します。</p>
+    <div id="fig-er"></div>
+    <h3>主な制約</h3>
+    <div id="tbl-er"></div>
+  </section>
+
+  <section id="trace">
+    <h2>9 要件との対応</h2>
+    <p class="lead">すべての機能IDが、APIとテーブルに対応しています。</p>
+    <div id="tbl-trace"></div>
+  </section>
+</main>
+
+<script>
+"use strict";
+const NS = "http://www.w3.org/2000/svg";
+const $ = (id) => document.getElementById(id);
+function el(tag, attrs, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) { if (k === "class") e.className = v; else e.setAttribute(k, v); }
+  for (const k of kids.flat()) if (k != null) e.append(k);
+  return e;
+}
+function sv(tag, attrs, text) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs || {})) e.setAttribute(k, v);
+  if (text != null) e.textContent = text;
+  return e;
+}
+function svg(w, h, label) {
+  const s = sv("svg", { viewBox: `0 0 ${w} ${h}`, role: "img", "aria-label": label });
+  s.append(sv("title", {}, label));
+  const defs = sv("defs"), mk = sv("marker", { id: "arr", viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 8, markerHeight: 8, orient: "auto-start-reverse" });
+  mk.append(sv("path", { d: "M0,0 L10,5 L0,10 z", fill: "#1f2933" })); defs.append(mk); s.append(defs);
+  return s;
+}
+function table(heads, rows, opts = {}) {
+  return el("table", {}, el("thead", {}, el("tr", {}, heads.map((t) => el("th", {}, t)))),
+    el("tbody", {}, rows.map((r) => el("tr", {}, r.map((c, n) => {
+      const td = el("td", opts.center && opts.center.includes(n) ? { class: "c" } : {});
+      if (c instanceof Node) td.append(c); else td.textContent = c;
+      return td;
+    })))));
+}
+const method = (m) => el("span", { class: "m " + m }, m);
+const code = (t) => el("code", {}, t);
+function box(s, x, y, w, h, title, lines, fill) {
+  s.append(sv("rect", { x, y, width: w, height: h, rx: 6, fill: fill || "#eef2ff", stroke: "#3b6fd8", "stroke-width": 1.5 }));
+  s.append(sv("text", { x: x + w / 2, y: y + 22, "text-anchor": "middle", "font-size": 14, "font-weight": 700, fill: "#1f2933" }, title));
+  (lines || []).forEach((l, n) => s.append(sv("text", { x: x + w / 2, y: y + 44 + n * 18, "text-anchor": "middle", "font-size": 12, fill: "#3b4654" }, l)));
+}
+function arrow(s, x1, y1, x2, y2, label, dashed, lx, ly) {
+  s.append(sv("line", { x1, y1, x2, y2, stroke: "#1f2933", "stroke-width": 1.5, "marker-end": "url(#arr)", "stroke-dasharray": dashed ? "5,4" : "none" }));
+  if (label) s.append(sv("text", { x: lx ?? (x1 + x2) / 2, y: ly ?? (y1 + y2) / 2 - 6, "text-anchor": "middle", "font-size": 12, fill: "#1f2933" }, label));
+}
+
+// ---------- 1 全体像 ----------
+(function () {
+  const s = svg(960, 250, "全体像: ブラウザ、Nodeサーバー、SQLite");
+  box(s, 20, 40, 230, 150, "ブラウザ(Chrome)", ["画面 S-01〜S-05", "HTML + 素のJavaScript", "グラフはSVGで描画", "外部CDNは使わない"]);
+  s.append(sv("rect", { x: 330, y: 20, width: 330, height: 200, rx: 8, fill: "#f8fafc", stroke: "#8a94a3", "stroke-dasharray": "6,4" }));
+  s.append(sv("text", { x: 495, y: 40, "text-anchor": "middle", "font-size": 13, fill: "#5f6b7a" }, "Node.js サーバー(localhost:8080)"));
+  box(s, 350, 50, 150, 60, "静的ファイル", ["HTML / JS / CSS"]);
+  box(s, 350, 130, 150, 60, "REST API", ["JSON / CSV"]);
+  box(s, 535, 50, 140, 140, "業務ロジック", ["状態遷移", "営業時間の計算", "集計", "入力検証"], "#ecfdf3");
+  box(s, 740, 20, 200, 90, "SQLite", ["data/inquiry.db", "社員・カテゴリ・問い合わせ・履歴"], "#fff7d6");
+  box(s, 740, 130, 200, 90, "月次集計ファイル", ["data/reports/YYYY-MM/", "CSV + SVG"], "#fff7d6");
+  arrow(s, 250, 80, 350, 80, "HTML / JS", false, 300, 72);
+  arrow(s, 250, 160, 350, 160, "fetch /api", false, 300, 152);
+  arrow(s, 500, 160, 535, 160);
+  arrow(s, 675, 100, 740, 65);
+  arrow(s, 675, 150, 740, 175);
+  $("fig-overview").append(s);
+  $("fig-overview").after(table(["層", "技術", "役割"], [
+    ["画面", "HTML / 素のJavaScript", "表示と入力。入力検証はサーバー側でも行う"],
+    ["API", "Node.js 標準の http(外部依存なし)", "入力検証、状態遷移の判定、エラー応答"],
+    ["DB", "SQLite(node:sqlite)", "永続化。SQLはプレースホルダ(?)で実行"],
+  ]));
+})();
+
+// ---------- 2 画面とAPI ----------
+$("tbl-screens").append(table(["画面", "操作", "呼び出すAPI"], [
+  ["共通", "担当者の選択肢を表示", code("GET /api/employees?staff=1&active=1")],
+  ["S-01 一覧", "一覧表示・絞り込み・並び替え", code("GET /api/inquiries")],
+  ["S-01 一覧", "CSV出力", code("GET /api/inquiries/export.csv")],
+  ["S-02 登録", "登録", code("POST /api/inquiries")],
+  ["S-03 詳細", "表示", code("GET /api/inquiries/{id}")],
+  ["S-03 詳細", "ステータス変更・完了", code("POST /api/inquiries/{id}/status")],
+  ["S-03 詳細", "担当者割当", code("POST /api/inquiries/{id}/assignee")],
+  ["S-03 詳細", "編集", code("PATCH /api/inquiries/{id}")],
+  ["S-03 詳細", "コメント追加", code("POST /api/inquiries/{id}/comments")],
+  ["S-04 集計", "表とグラフの表示", code("GET /api/reports/summary")],
+  ["S-04 集計", "CSV出力", code("GET /api/reports/export.csv")],
+  ["S-04 集計", "月次保存・保存済み一覧", code("POST・GET /api/reports/monthly")],
+  ["S-05 マスタ", "一覧・追加・編集・無効化", code("/api/employees、/api/categories")],
+]));
+
+// ---------- 3 共通仕様 ----------
+$("tbl-common").append(table(["項目", "内容"], [
+  ["形式", "JSON(UTF-8)。CSVのみ text/csv(BOM付き)"],
+  ["ベースパス", "/api"],
+  ["操作者", "変更系はヘッダー X-Operator-Id(担当者の社員ID)"],
+  ["日時", "YYYY-MM-DD HH:mm:ss.SSS(日本時間)"],
+  ["同時更新", "updatedAt が違えば 409 STALE_UPDATE"],
+  ["文字数", "自由入力は50文字以内"],
+  ["更新", "問い合わせ+履歴は1トランザクション"],
+]));
+$("tbl-codes").append(table(["コード", "意味", "場面"], [
+  ["200", "成功", "取得・更新・集計"],
+  ["201", "作成", "登録・月次保存"],
+  ["400", "入力不正", "必須漏れ・50文字超・操作者が無効"],
+  ["404", "存在しない", "存在しないID"],
+  ["409", "競合・状態の不整合", "同時更新・不正な遷移・担当者未割当・無効化の拒否"],
+  ["500", "想定外", "内部情報は返さない"],
+], { center: [0] }));
+$("tbl-errors").append(table(["code", "HTTP", "画面での表示"], [
+  ["VALIDATION_ERROR", "400", "該当項目の下にメッセージを表示"],
+  ["OPERATOR_REQUIRED", "400", "操作する担当者を選択してください"],
+  ["NOT_FOUND", "404", "問い合わせが見つかりません"],
+  ["STALE_UPDATE", "409", "他の担当者が先に更新しました。最新の内容を読み込み直してください"],
+  ["INVALID_TRANSITION", "409", "現在のステータスからは変更できません"],
+  ["ASSIGNEE_REQUIRED", "409", "担当者を割り当ててください"],
+  ["COMPLETED_LOCKED", "409", "完了済みのため編集できません"],
+  ["HAS_OPEN_INQUIRIES", "409", "未完了の問い合わせの担当者になっているため、無効にできません"],
+  ["INTERNAL_ERROR", "500", "処理に失敗しました。時間をおいて、もう一度お試しください"],
+], { center: [1] }));
+
+// ---------- 4 エンドポイント ----------
+const EP = [
+  ["問い合わせ", "GET", "/api/inquiries", "一覧(絞り込み・並び替え・ページング)", "F-02", "200"],
+  ["", "GET", "/api/inquiries/export.csv", "一覧のCSV出力(同じ条件、全件)", "F-10", "200"],
+  ["", "POST", "/api/inquiries", "登録", "F-01", "201"],
+  ["", "GET", "/api/inquiries/{id}", "詳細と対応履歴", "F-03", "200"],
+  ["", "PATCH", "/api/inquiries/{id}", "編集(件名・内容・カテゴリ・優先度)", "F-07", "200"],
+  ["", "POST", "/api/inquiries/{id}/status", "ステータス変更(完了時は対応内容)", "F-04", "200"],
+  ["", "POST", "/api/inquiries/{id}/assignee", "担当者の割当・変更", "F-05", "200"],
+  ["", "POST", "/api/inquiries/{id}/comments", "コメントの追加", "F-06", "201"],
+  ["マスタ", "GET", "/api/employees", "社員の一覧", "F-08", "200"],
+  ["", "POST", "/api/employees", "社員の追加", "F-08", "201"],
+  ["", "PATCH", "/api/employees/{id}", "社員の編集・有効/無効", "F-08", "200"],
+  ["", "GET", "/api/categories", "カテゴリの一覧", "F-09", "200"],
+  ["", "POST", "/api/categories", "カテゴリの追加", "F-09", "201"],
+  ["", "PATCH", "/api/categories/{id}", "カテゴリの編集・有効/無効", "F-09", "200"],
+  ["集計", "GET", "/api/reports/summary", "A-01〜A-06 の集計", "A-01〜06", "200"],
+  ["", "GET", "/api/reports/export.csv", "集計表のCSV出力", "F-12", "200"],
+  ["", "POST", "/api/reports/monthly", "月次集計の保存(CSV+SVG)", "F-13", "201"],
+  ["", "GET", "/api/reports/monthly", "保存済み月の一覧", "F-13", "200"],
+  ["", "GET", "/api/reports/monthly/{month}/{file}", "保存済みファイルのダウンロード", "F-13", "200"],
+];
+$("tbl-endpoints").append(table(["区分", "メソッド", "パス", "機能", "機能ID", "成功"],
+  EP.map((r) => [r[0], method(r[1]), code(r[2]), r[3], r[4], r[5]]), { center: [4, 5] }));
+
+// ---------- 5 ステータス遷移 ----------
+(function () {
+  const s = svg(960, 210, "ステータス遷移図");
+  const N = { start: [30, 100], new: [100, 70], doing: [370, 70], hold: [370, 150], done: [700, 70] };
+  s.append(sv("circle", { cx: 40, cy: 100, r: 8, fill: "#1f2933" }));
+  const st = (x, y, t, fill) => { s.append(sv("rect", { x, y, width: 130, height: 46, rx: 23, fill, stroke: "#1f2933", "stroke-width": 1.5 }));
+    s.append(sv("text", { x: x + 65, y: y + 29, "text-anchor": "middle", "font-size": 15, "font-weight": 700 }, t)); };
+  st(100, 77, "未対応", "#e5e7eb"); st(370, 77, "対応中", "#dbeafe"); st(370, 160, "保留", "#fef3c7"); st(700, 77, "完了", "#d1fae5");
+  arrow(s, 48, 100, 100, 100, "登録", false, 70, 90);
+  arrow(s, 230, 100, 370, 100, "担当者を割り当てて開始", false, 300, 92);
+  arrow(s, 435, 123, 435, 160, null);
+  arrow(s, 470, 160, 470, 123, null);
+  s.append(sv("text", { x: 405, y: 148, "text-anchor": "end", "font-size": 12 }, "保留にする"));
+  s.append(sv("text", { x: 478, y: 148, "text-anchor": "start", "font-size": 12 }, "再開"));
+  arrow(s, 500, 100, 700, 100, "対応内容を入力して完了", false, 600, 92);
+  s.append(sv("circle", { cx: 880, cy: 100, r: 10, fill: "none", stroke: "#1f2933", "stroke-width": 2 }));
+  s.append(sv("circle", { cx: 880, cy: 100, r: 5, fill: "#1f2933" }));
+  arrow(s, 830, 100, 868, 100, "最終", false, 850, 88);
+  $("fig-state").append(s);
+  $("tbl-state").append(table(["現在", "操作できる変更", "担当者割当", "編集", "コメント"], [
+    ["未対応", "対応中", "可", "可", "可"], ["対応中", "保留 / 完了", "可", "可", "可"],
+    ["保留", "対応中", "可", "可", "可"], ["完了", "なし(最終状態)", "不可", "不可", "可"],
+  ], { center: [2, 3, 4] }));
+})();
+
+// ---------- 6 シーケンス図 ----------
+function seq(actors, steps, label) {
+  const W = 960, left = 60, gap = (W - 120) / (actors.length - 1);
+  const xs = actors.map((_, n) => left + n * gap);
+  const rowH = 38; let y = 70;
+  const items = [];
+  steps.forEach((st) => { items.push({ ...st, y }); y += st.band ? rowH - 6 : rowH; });
+  const H = y + 24;
+  const s = svg(W, H, label);
+  actors.forEach((a, n) => {
+    s.append(sv("line", { x1: xs[n], y1: 52, x2: xs[n], y2: H - 12, stroke: "#9aa5b4", "stroke-dasharray": "4,4" }));
+    s.append(sv("rect", { x: xs[n] - 70, y: 14, width: 140, height: 34, rx: 5, fill: "#eef2ff", stroke: "#3b6fd8" }));
+    s.append(sv("text", { x: xs[n], y: 36, "text-anchor": "middle", "font-size": 13, "font-weight": 700 }, a));
+  });
+  items.forEach((it) => {
+    if (it.band) {
+      s.append(sv("rect", { x: 20, y: it.y - 16, width: W - 40, height: 22, fill: it.ok ? "#ecfdf3" : "#fef3f2", stroke: it.ok ? "#a6e3c2" : "#f4b4ae" }));
+      s.append(sv("text", { x: 30, y: it.y, "font-size": 12, "font-weight": 700, fill: it.ok ? "#067647" : "#b42318" }, it.band));
+      return;
+    }
+    const x1 = xs[it.from], x2 = xs[it.to];
+    s.append(sv("line", { x1, y1: it.y, x2: x2 + (x2 > x1 ? -2 : 2), y2: it.y, stroke: "#1f2933", "stroke-width": 1.5, "marker-end": "url(#arr)", "stroke-dasharray": it.dashed ? "5,4" : "none" }));
+    s.append(sv("text", { x: (x1 + x2) / 2, y: it.y - 6, "text-anchor": "middle", "font-size": 12 }, it.text));
+  });
+  return s;
+}
+$("fig-seq1").append(seq(["担当者", "画面 S-03", "API", "SQLite"], [
+  { from: 0, to: 1, text: "「完了にする」+ 対応内容を入力" },
+  { from: 1, to: 2, text: "POST /status { 完了, resolution, updatedAt }" },
+  { from: 2, to: 3, text: "問い合わせ・履歴を取得" },
+  { band: "更新日時が違う(同時更新)" },
+  { from: 2, to: 1, text: "409 STALE_UPDATE", dashed: true },
+  { from: 1, to: 0, text: "「他の担当者が先に更新しました」", dashed: true },
+  { band: "担当者が未割当" },
+  { from: 2, to: 1, text: "409 ASSIGNEE_REQUIRED", dashed: true },
+  { from: 1, to: 0, text: "「担当者を割り当ててください」", dashed: true },
+  { band: "対応内容が空・50文字超" },
+  { from: 2, to: 1, text: "400 VALIDATION_ERROR", dashed: true },
+  { from: 1, to: 0, text: "項目の下にエラーを表示", dashed: true },
+  { band: "成功", ok: true },
+  { from: 2, to: 3, text: "更新 + 履歴の追加(1トランザクション)" },
+  { from: 2, to: 1, text: "200 更新後の詳細", dashed: true },
+  { from: 1, to: 0, text: "「完了にしました」", dashed: true },
+], "完了にする処理のシーケンス図"));
+$("fig-seq2").append(seq(["担当者A", "API", "担当者B"], [
+  { from: 0, to: 1, text: "詳細を取得" },
+  { from: 1, to: 0, text: "updatedAt = T1", dashed: true },
+  { from: 2, to: 1, text: "詳細を取得" },
+  { from: 1, to: 2, text: "updatedAt = T1", dashed: true },
+  { from: 0, to: 1, text: "担当者を変更(updatedAt = T1)" },
+  { from: 1, to: 0, text: "200(updatedAt = T2)", dashed: true },
+  { band: "Bが同じ T1 で更新すると競合" },
+  { from: 2, to: 1, text: "保留にする(updatedAt = T1)" },
+  { from: 1, to: 2, text: "409 STALE_UPDATE → 再読み込み", dashed: true },
+], "同時更新の検出のシーケンス図"));
+
+// ---------- 7 対応時間の計算 ----------
+(function () {
+  const W = 960, H = 300, left = 120, dayW = 165, top = 56, colW = dayW - 8;
+  const s = svg(W, H, "対応時間の計算の例");
+  const days = ["金 10/09", "土 10/10", "日 10/11", "月 10/12", "火 10/13"];
+  days.forEach((d, n) => {
+    const x = left + n * dayW;
+    const off = n === 1 || n === 2;
+    s.append(sv("rect", { x, y: top, width: colW, height: 150, fill: off ? "#f1f5f9" : "#fff", stroke: "#cfd6df" }));
+    s.append(sv("text", { x: x + colW / 2, y: top - 10, "text-anchor": "middle", "font-size": 14, "font-weight": 700 }, d));
+    if (off) s.append(sv("text", { x: x + colW / 2, y: top + 80, "text-anchor": "middle", "font-size": 13, fill: "#5f6b7a" }, "休み(数えない)"));
+  });
+  s.append(sv("text", { x: 14, y: top + 40, "font-size": 13, "font-weight": 700 }, "営業時間"));
+  s.append(sv("text", { x: 14, y: top + 60, "font-size": 12, fill: "#5f6b7a" }, "9:00〜18:00"));
+  s.append(sv("text", { x: 14, y: top + 118, "font-size": 13, "font-weight": 700 }, "対応時間"));
+  // 各日の列(幅 colW)を 9:00〜18:00 の9時間として描画する。
+  // バーの幅が狭い場合は、文字をバーの外側に置く。
+  const bar = (n, h1, h2, y, fill, text, stroke) => {
+    const x = left + n * dayW + ((h1 - 9) / 9) * colW, w = ((h2 - h1) / 9) * colW;
+    s.append(sv("rect", { x, y, width: w, height: 26, fill, stroke: stroke || "#1f2933" }));
+    if (!text) return;
+    if (w >= 60) s.append(sv("text", { x: x + w / 2, y: y + 17, "text-anchor": "middle", "font-size": 12 }, text));
+    else if (h1 > 12) s.append(sv("text", { x: x - 5, y: y + 17, "text-anchor": "end", "font-size": 12 }, text));
+    else s.append(sv("text", { x: x + w + 5, y: y + 17, "text-anchor": "start", "font-size": 12 }, text));
+  };
+  // 営業時間のバー(受付〜完了の範囲)
+  bar(0, 16.5, 18, top + 26, "#dbeafe", "16:30〜", "#3b6fd8");
+  bar(3, 9, 18, top + 26, "#dbeafe", "9:00〜18:00", "#3b6fd8");
+  bar(4, 9, 10, top + 26, "#dbeafe", "〜10:00", "#3b6fd8");
+  // 保留と対応時間
+  bar(3, 9, 13, top + 84, "#fef3c7", "保留(除く)", "#b54708");
+  bar(3, 13, 18, top + 84, "#d1fae5", "5:00", "#067647");
+  bar(0, 16.5, 18, top + 84, "#d1fae5", "1:30", "#067647");
+  bar(4, 9, 10, top + 84, "#d1fae5", "1:00", "#067647");
+  s.append(sv("text", { x: left, y: top + 190, "font-size": 14, "font-weight": 700 }, "合計 = 1:30 + 5:00 + 1:00 = 7:30(450分)"));
+  s.append(sv("text", { x: left, y: top + 214, "font-size": 12, fill: "#5f6b7a" }, "受付 金 16:30 → 完了 火 10:00。土日は数えず、月曜の 9:00〜13:00(保留)は除く。"));
+  $("fig-calc").append(s);
+  $("tbl-calc").append(table(["日", "時間帯", "営業時間内", "保留", "対応時間に数える"], [
+    ["金 2026/10/09", "16:30〜18:00", "1:30", "なし", "1:30"],
+    ["土・日", "—", "数えない", "—", "0:00"],
+    ["月 2026/10/12", "9:00〜18:00", "9:00", "9:00〜13:00(4:00)", "5:00"],
+    ["火 2026/10/13", "9:00〜10:00", "1:00", "なし", "1:00"],
+    ["合計", "", "", "", "7:30(450分)"],
+  ], { center: [2, 4] }));
+})();
+
+// ---------- 8 ER図 ----------
+(function () {
+  const T = {
+    employees: { x: 20, y: 20, cols: [["id", "PK"], ["name", ""], ["department", ""], ["is_staff", "担当者区分"], ["is_active", ""]] },
+    categories: { x: 20, y: 250, cols: [["id", "PK"], ["name", "UK"], ["sort_order", ""], ["is_active", ""]] },
+    inquiries: { x: 380, y: 20, cols: [["id", "PK"], ["title", ""], ["body", ""], ["requester_id", "FK"], ["assignee_id", "FK"], ["category_id", "FK"], ["priority", "高/中/低"],
+      ["status", "4値"], ["related_inquiry_id", "FK"], ["resolution", ""], ["received_at", ""], ["updated_at", "楽観ロック"], ["completed_at", ""], ["work_minutes", "分"]] },
+    inquiry_histories: { x: 740, y: 120, cols: [["id", "PK"], ["inquiry_id", "FK"], ["type", "5種"], ["from_status", ""], ["to_status", ""], ["content", ""], ["operator_id", "FK"], ["at", ""]] },
+  };
+  const labels = { employees: "employees(社員)", categories: "categories(カテゴリ)", inquiries: "inquiries(問い合わせ)", inquiry_histories: "inquiry_histories(対応履歴)" };
+  const W = 960, H = 410, bw = 200, rh = 20;
+  const s = svg(W, H, "ER図");
+  const pos = {};
+  Object.entries(T).forEach(([name, t]) => {
+    const h = 30 + t.cols.length * rh;
+    pos[name] = { x: t.x, y: t.y, w: bw, h };
+    s.append(sv("rect", { x: t.x, y: t.y, width: bw, height: h, fill: "#fff", stroke: "#3b6fd8", "stroke-width": 1.5 }));
+    s.append(sv("rect", { x: t.x, y: t.y, width: bw, height: 26, fill: "#3b6fd8" }));
+    s.append(sv("text", { x: t.x + 8, y: t.y + 18, "font-size": 12.5, "font-weight": 700, fill: "#fff" }, labels[name]));
+    t.cols.forEach((c, n) => {
+      const y = t.y + 26 + (n + 1) * rh - 6;
+      s.append(sv("text", { x: t.x + 8, y, "font-size": 12, "font-weight": c[1] === "PK" ? 700 : 400 }, c[0]));
+      if (c[1]) s.append(sv("text", { x: t.x + bw - 8, y, "text-anchor": "end", "font-size": 11, fill: "#5f6b7a" }, c[1]));
+    });
+  });
+  const line = (x1, y1, x2, y2, label, lx, ly) => {
+    s.append(sv("polyline", { points: `${x1},${y1} ${x2},${y2}`, fill: "none", stroke: "#1f2933", "stroke-width": 1.5 }));
+    if (label) s.append(sv("text", { x: lx, y: ly, "text-anchor": "middle", "font-size": 12, fill: "#b42318", stroke: "#fff", "stroke-width": 4, "paint-order": "stroke" }, label));
+  };
+  const rowY = (name, col) => T[name].y + 26 + (T[name].cols.findIndex((c) => c[0] === col) + 1) * rh - 10;
+  // ラベルは線の中点の少し上に置く(表示順を依頼者→担当者→カテゴリにして、線が交差しないようにしている)
+  const link = (fromName, fromCol, toCol, label) => {
+    const y1 = rowY(fromName, fromCol), y2 = rowY("inquiries", toCol);
+    line(220, y1, 380, y2, label, 300, (y1 + y2) / 2 - 5);
+  };
+  link("employees", "id", "requester_id", "依頼者 1 : N");
+  link("employees", "is_staff", "assignee_id", "担当者 1 : N");
+  link("categories", "id", "category_id", "分類 1 : N");
+  line(580, rowY("inquiries", "id"), 740, rowY("inquiry_histories", "inquiry_id"), "履歴 1 : N", 660, rowY("inquiry_histories", "inquiry_id") - 6);
+  s.append(sv("path", { d: `M580,${rowY("inquiries", "related_inquiry_id")} h20 v40 h-20`, fill: "none", stroke: "#1f2933", "stroke-width": 1.5 }));
+  s.append(sv("text", { x: 604, y: rowY("inquiries", "related_inquiry_id") + 24, "font-size": 12, fill: "#b42318" }, "関連(自己参照)"));
+  s.append(sv("text", { x: 740, y: 370, "font-size": 12, fill: "#5f6b7a" }, "operator_id → employees(操作者)"));
+  $("fig-er").append(s);
+  $("tbl-er").append(table(["対象", "制約・規則"], [
+    ["inquiries.status", "CHECK(未対応 / 対応中 / 保留 / 完了)"],
+    ["inquiries.priority", "CHECK(高 / 中 / 低)"],
+    ["inquiries", "ステータスが「未対応」以外なら担当者が必須。「完了」なら対応内容・完了日時・対応時間が必須"],
+    ["文字数", "件名・内容・対応内容・氏名・部署・カテゴリ名は1〜50文字"],
+    ["外部キー", "有効化(PRAGMA foreign_keys = ON)。物理削除はしない"],
+    ["索引", "inquiries(status)、(received_at)、(assignee_id, status)、(category_id) / inquiry_histories(inquiry_id, at)"],
+    ["履歴の種別", "registered(登録)/ status(ステータス変更)/ assignee(担当者変更)/ comment(コメント)/ edit(編集)"],
+    ["保留期間の算出", "履歴の status(from_status, to_status, at)から、保留に入った日時〜戻した日時を求める"],
+  ]));
+})();
+
+// ---------- 9 要件との対応 ----------
+$("tbl-trace").append(table(["要件", "API", "テーブル"], [
+  ["F-01 登録", "POST /api/inquiries", "inquiries、inquiry_histories"],
+  ["F-02 一覧", "GET /api/inquiries", "inquiries、employees、categories"],
+  ["F-03 詳細", "GET /api/inquiries/{id}", "inquiries、inquiry_histories"],
+  ["F-04 ステータス変更", "POST /api/inquiries/{id}/status", "inquiries、inquiry_histories"],
+  ["F-05 担当者割当", "POST /api/inquiries/{id}/assignee", "inquiries、inquiry_histories"],
+  ["F-06 対応履歴", "更新系の各API + POST …/comments", "inquiry_histories"],
+  ["F-07 編集", "PATCH /api/inquiries/{id}", "inquiries、inquiry_histories"],
+  ["F-08 社員マスタ", "/api/employees", "employees"],
+  ["F-09 カテゴリマスタ", "/api/categories", "categories"],
+  ["F-10 一覧CSV", "GET /api/inquiries/export.csv", "inquiries"],
+  ["F-11 サンプルデータ", "npm run seed(APIなし)", "全テーブル"],
+  ["F-12 集計CSV", "GET /api/reports/export.csv", "inquiries"],
+  ["F-13 月次保存", "/api/reports/monthly", "inquiries(+ ファイル)"],
+  ["A-01〜A-06 集計", "GET /api/reports/summary", "inquiries、employees、categories"],
+]));
+</script>
+</body>
+</html>
