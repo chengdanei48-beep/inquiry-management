@@ -1,34 +1,11 @@
 // ステータス遷移(docs/requirements.md 4章、docs/api-design.md 5.4)。
-//
-//   未対応 → 対応中 ⇄ 保留
-//             ↓
-//            完了(最終状態。再開しない)
+// 定義(ステータス・優先度・遷移)はブラウザと共有するため、public/js/status.js にある。
 import { AppError, validationError } from '../http/errors.js';
+import { canTransition, COMPLETED, isLocked } from '../../public/js/status.js';
 
-export const STATUSES = ['未対応', '対応中', '保留', '完了'];
-export const PRIORITIES = ['高', '中', '低'];
-export const COMPLETED = '完了';
-
-const TRANSITIONS = {
-  未対応: ['対応中'],
-  対応中: ['保留', '完了'],
-  保留: ['対応中'],
-  完了: [],
-};
-
-/** 現在のステータスから変更できるステータス(画面のボタンの出し分けに使う)。 */
-export function availableTransitions(status) {
-  return [...(TRANSITIONS[status] ?? [])];
-}
-
-export function canTransition(from, to) {
-  return (TRANSITIONS[from] ?? []).includes(to);
-}
-
-/** 完了済みの問い合わせは、編集・担当者変更ができない(コメントのみ可)。 */
-export function isLocked(status) {
-  return status === COMPLETED;
-}
+export {
+  availableTransitions, canTransition, COMPLETED, isLocked, PRIORITIES, STATUSES,
+} from '../../public/js/status.js';
 
 export function assertNotLocked(status) {
   if (isLocked(status)) {
