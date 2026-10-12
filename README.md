@@ -1,4 +1,4 @@
-# InquiryManagement(問い合わせ管理)
+﻿# InquiryManagement(問い合わせ管理)
 
 問い合わせの登録・一覧・ステータス管理・担当者割当・履歴を扱うアプリ。課題として作成する。
 
@@ -15,6 +15,7 @@
 - [題材の選定理由](docs/selection-rationale.md)
 - [要件定義書](docs/requirements.md)
 - [画面設計書](docs/screen-design.md)
+- [画面サンプル](docs/mockups/screen-sample.html)(Chromeで開いて確認する)
 
 ## 開発ルール
 
