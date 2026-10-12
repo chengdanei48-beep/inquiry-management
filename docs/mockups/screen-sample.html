@@ -1,0 +1,642 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>問い合わせ管理 画面サンプル</title>
+<style>
+  :root {
+    --bg: #f5f6f8; --panel: #fff; --text: #1f2933; --muted: #5f6b7a; --border: #cfd6df;
+    --accent: #1d4ed8; --accent-text: #fff; --danger: #b42318; --danger-bg: #fef3f2;
+    --ok: #067647; --ok-bg: #ecfdf3; --banner: #fff7d6;
+    --st-new: #e5e7eb; --st-doing: #dbeafe; --st-hold: #fef3c7; --st-done: #d1fae5;
+    --bar: #3b6fd8; --bar2: #8aa8e8;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.6 "Yu Gothic UI", "Meiryo", sans-serif; }
+  .sample-banner { background: var(--banner); border-bottom: 1px solid #e6d58a; padding: 6px 16px; font-size: 13px; }
+  header { background: var(--panel); border-bottom: 1px solid var(--border); padding: 8px 16px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  header h1 { font-size: 18px; margin: 0 8px 0 0; }
+  nav { display: flex; gap: 4px; flex: 1; }
+  nav a { padding: 6px 12px; border-radius: 4px; color: var(--text); text-decoration: none; }
+  nav a[aria-current="page"] { font-weight: 700; text-decoration: underline; background: #eef2ff; }
+  nav a:hover { background: #eef2ff; }
+  .operator { display: flex; align-items: center; gap: 6px; }
+  main { max-width: 1100px; margin: 0 auto; padding: 16px; }
+  h2 { font-size: 18px; margin: 0 0 12px; }
+  h3 { font-size: 15px; margin: 0 0 8px; }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 16px; margin-bottom: 16px; }
+  .msg { padding: 10px 14px; border-radius: 4px; margin-bottom: 12px; border: 1px solid; }
+  .msg.error { background: var(--danger-bg); border-color: #f4b4ae; color: var(--danger); }
+  .msg.ok { background: var(--ok-bg); border-color: #a6e3c2; color: var(--ok); }
+  .msg.info { background: #eff6ff; border-color: #bcd2fb; }
+  label { display: block; font-weight: 600; margin-bottom: 2px; }
+  .req { color: var(--danger); font-weight: 400; font-size: 12px; margin-left: 4px; }
+  input, select, textarea, button { font: inherit; }
+  input[type=text], input[type=number], input[type=date], input[type=month], select, textarea { width: 100%; padding: 6px 8px; border: 1px solid var(--border); border-radius: 4px; background: #fff; color: var(--text); }
+  input[aria-invalid="true"], textarea[aria-invalid="true"], select[aria-invalid="true"] { border-color: var(--danger); background: var(--danger-bg); }
+  .field { margin-bottom: 14px; max-width: 560px; }
+  .field-error { color: var(--danger); font-size: 13px; margin-top: 2px; }
+  .counter { color: var(--muted); font-size: 12px; text-align: right; }
+  button { padding: 6px 14px; border: 1px solid var(--border); border-radius: 4px; background: #fff; cursor: pointer; }
+  button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid #93b4ff; outline-offset: 1px; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+  .row .field { margin-bottom: 0; flex: 1 1 160px; max-width: 220px; }
+  table { border-collapse: collapse; width: 100%; background: #fff; }
+  th, td { border: 1px solid var(--border); padding: 6px 8px; text-align: left; vertical-align: top; }
+  th { background: #f0f3f7; font-weight: 600; }
+  th button { border: 0; background: none; padding: 0; font-weight: 600; }
+  td.num, th.num { text-align: right; }
+  .badge { display: inline-block; padding: 1px 10px; border-radius: 10px; border: 1px solid rgba(0,0,0,.15); font-size: 13px; white-space: nowrap; }
+  .st-未対応 { background: var(--st-new); } .st-対応中 { background: var(--st-doing); }
+  .st-保留 { background: var(--st-hold); } .st-完了 { background: var(--st-done); }
+  .actions { display: flex; gap: 8px; margin: 12px 0; flex-wrap: wrap; align-items: center; }
+  .pager { display: flex; gap: 12px; align-items: center; margin-top: 12px; }
+  dl.info { display: grid; grid-template-columns: 140px 1fr; gap: 4px 12px; margin: 0; }
+  dl.info dt { color: var(--muted); } dl.info dd { margin: 0; }
+  ul.history { list-style: none; padding: 0; margin: 0; }
+  ul.history li { padding: 6px 0; border-bottom: 1px solid #e5e9ef; }
+  ul.history .when { color: var(--muted); margin-right: 8px; }
+  .report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+  .report-grid svg { width: 100%; height: auto; background: #fff; border: 1px solid var(--border); }
+  .legend { display: flex; gap: 16px; font-size: 13px; margin-bottom: 6px; }
+  .legend span::before { content: ""; display: inline-block; width: 14px; height: 14px; margin-right: 4px; vertical-align: -2px; border: 1px solid #1f3a7a; }
+  .legend .l-done::before { background: var(--bar); }
+  .legend .l-open::before { background: repeating-linear-gradient(45deg, #fff, #fff 3px, var(--bar2) 3px, var(--bar2) 5px); }
+  .tabs { display: flex; gap: 4px; margin-bottom: 12px; }
+  .tabs button[aria-selected="true"] { background: var(--accent); color: #fff; border-color: var(--accent); }
+  dialog { border: 1px solid var(--border); border-radius: 6px; padding: 20px; width: 480px; max-width: 94vw; }
+  dialog::backdrop { background: rgba(0,0,0,.35); }
+  .muted { color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="sample-banner">画面サンプル(ダミーデータ)。サーバー・DBには接続せず、変更はこのページ内だけで有効です。再読み込みで元に戻ります。集計の既定期間は、サンプルでは全期間にしています。</div>
+<header>
+  <h1>問い合わせ管理</h1>
+  <nav aria-label="メニュー" id="nav"></nav>
+  <div class="operator">
+    <label for="operator" style="margin:0">操作する担当者</label>
+    <select id="operator" style="width:auto"></select>
+  </div>
+</header>
+<main>
+  <div id="messages" aria-live="polite"></div>
+  <div id="view"></div>
+</main>
+<dialog id="dlg"></dialog>
+
+<script>
+"use strict";
+// ---------- ダミーデータ ----------
+const TODAY = "2026-10-12";
+const employees = [
+  { id: 1, name: "山田 太郎", dept: "情報システム", staff: true, active: true },
+  { id: 2, name: "佐藤 花子", dept: "情報システム", staff: true, active: true },
+  { id: 3, name: "鈴木 一郎", dept: "総務", staff: true, active: true },
+  { id: 4, name: "高橋 美咲", dept: "人事", staff: false, active: true },
+  { id: 5, name: "田中 健太", dept: "営業", staff: false, active: true },
+  { id: 6, name: "伊藤 さくら", dept: "営業", staff: false, active: true },
+  { id: 7, name: "渡辺 大輔", dept: "開発", staff: false, active: true },
+  { id: 8, name: "小林 優子", dept: "開発", staff: false, active: true },
+  { id: 9, name: "加藤 誠", dept: "総務", staff: false, active: true },
+  { id: 10, name: "吉田 愛", dept: "人事", staff: false, active: true },
+];
+const categories = [
+  { id: 1, name: "PC・ネットワーク", order: 1, active: true },
+  { id: 2, name: "アカウント・権限", order: 2, active: true },
+  { id: 3, name: "備品・ソフト申請", order: 3, active: true },
+  { id: 4, name: "入退社手続き", order: 4, active: true },
+  { id: 5, name: "その他", order: 5, active: true },
+];
+const STATUSES = ["未対応", "対応中", "保留", "完了"];
+const PRIORITIES = ["高", "中", "低"];
+function mk(id, title, body, req, cat, pri, st, asg, rec, closed, res, mins, rel) {
+  return { id, title, body, requester: req, category: cat, priority: pri, status: st, assignee: asg,
+    received: rec, updated: closed || rec, closed: closed || null, resolution: res || "", mins: mins ?? null, related: rel || null,
+    history: [{ at: rec, by: asg || req, text: "問い合わせを登録しました" }] };
+}
+const inquiries = [
+  mk(1, "パスワードを忘れた", "ログインできない", 5, 2, "中", "完了", 1, "2026/07/06 09:40", "2026/07/06 10:20", "パスワードを再発行した", 40),
+  mk(2, "PCが起動しない", "電源を入れても画面が出ない", 7, 1, "高", "完了", 2, "2026/07/14 10:05", "2026/07/14 15:30", "電源ユニットを交換した", 325),
+  mk(3, "新入社員のアカウント作成", "7/27入社の2名分", 4, 4, "中", "完了", 3, "2026/07/27 13:00", "2026/07/29 11:00", "アカウントを作成し通知した", 840),
+  mk(4, "ソフトのインストール申請", "PDF編集ソフトを導入したい", 6, 3, "低", "完了", 1, "2026/08/03 11:15", "2026/08/05 16:00", "ライセンスを付与した", 1030),
+  mk(5, "Wi-Fiが繋がらない", "3階会議室で接続できない", 9, 1, "中", "完了", 2, "2026/08/10 14:20", "2026/08/10 17:40", "アクセスポイントを再起動した", 200),
+  mk(6, "共有フォルダに入れない", "開発部の共有フォルダ", 8, 2, "高", "完了", 1, "2026/08/18 09:10", "2026/08/18 12:00", "アクセス権を付与した", 170),
+  mk(7, "モニターの追加申請", "2台目のモニター", 7, 3, "低", "完了", 3, "2026/08/25 15:30", "2026/08/28 10:00", "備品を手配し配布した", 800),
+  mk(8, "退職者のアカウント停止", "9/1付の退職者", 10, 4, "中", "完了", 3, "2026/09/01 10:00", "2026/09/01 14:30", "アカウントを停止した", 270),
+  mk(9, "プリンターが印刷できない", "総務の複合機", 9, 1, "中", "完了", 2, "2026/09/08 16:50", "2026/09/10 09:20", "ドライバーを再設定した", 330),
+  mk(10, "メールが送信できない", "送信エラーになる", 5, 1, "高", "完了", 1, "2026/09/15 09:30", "2026/09/15 11:10", "容量を整理した", 100),
+  mk(11, "VPNに接続できない", "在宅勤務で接続不可", 8, 1, "高", "対応中", 1, "2026/09/24 10:20"),
+  mk(12, "USBメモリの使用許可", "取引先とのデータ受け渡し", 6, 5, "低", "保留", 3, "2026/09/30 14:00"),
+  mk(13, "権限の変更申請", "人事システムの閲覧権限", 4, 2, "中", "対応中", 2, "2026/10/05 11:30", null, "", null, 6),
+  mk(14, "キーボードの交換", "キーが反応しない", 9, 3, "低", "未対応", null, "2026/10/08 13:45"),
+  mk(15, "ノートPCの貸出", "出張用に1台", 5, 3, "中", "未対応", null, "2026/10/12 09:15"),
+];
+let reportsSaved = [{ month: "2026-09", savedAt: "2026/10/01 09:00" }];
+
+// ---------- ユーティリティ ----------
+const $ = (id) => document.getElementById(id);
+const emp = (id) => employees.find((e) => e.id === id);
+const cat = (id) => categories.find((c) => c.id === id);
+const inq = (id) => inquiries.find((i) => i.id === id);
+const nameDept = (id) => { const e = emp(id); return e ? `${e.name}(${e.dept})` : "-"; };
+const fmtMins = (m) => (m == null ? "-" : `${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")}`);
+const dateOnly = (s) => s.slice(0, 10).replace(/\//g, "-");
+const nowText = () => "2026/10/12 " + new Date().toTimeString().slice(0, 5);
+
+function h(tag, attrs, ...kids) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v == null || v === false) continue;
+    if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+    else if (k === "class") el.className = v;
+    else if (k === "value") el.value = v;
+    else el.setAttribute(k, v === true ? "" : v);
+  }
+  for (const kid of kids.flat()) if (kid != null && kid !== false) el.append(kid);
+  return el;
+}
+const svgNS = "http://www.w3.org/2000/svg";
+function s(tag, attrs, text) {
+  const el = document.createElementNS(svgNS, tag);
+  for (const [k, v] of Object.entries(attrs || {})) el.setAttribute(k, v);
+  if (text != null) el.textContent = text;
+  return el;
+}
+function showMessage(text, kind) {
+  const box = $("messages");
+  box.replaceChildren();
+  if (text) box.append(h("div", { class: "msg " + (kind || "info"), role: kind === "error" ? "alert" : "status" }, text));
+}
+function operatorId() { return Number($("operator").value) || null; }
+function needOperator() {
+  if (operatorId()) return true;
+  showMessage("操作する担当者を選択してください", "error");
+  return false;
+}
+function badge(st) { return h("span", { class: "badge st-" + st }, st); }
+
+// 入力欄(ラベル・必須・文字数)
+function textField(label, id, opts = {}) {
+  const input = opts.multiline
+    ? h("textarea", { id, rows: 3, maxlength: 200, "aria-describedby": id + "-c" })
+    : h("input", { id, type: "text", "aria-describedby": id + "-c" });
+  if (opts.value) input.value = opts.value;
+  const counter = h("div", { class: "counter", id: id + "-c" }, `${[...input.value].length}/50`);
+  input.addEventListener("input", () => { counter.textContent = `${[...input.value].length}/50`; });
+  return h("div", { class: "field" },
+    h("label", { for: id }, label, opts.required ? h("span", { class: "req" }, "必須") : null),
+    input, counter, h("div", { class: "field-error", id: id + "-e", role: "alert" }));
+}
+function selectField(label, id, options, opts = {}) {
+  const sel = h("select", { id }, opts.placeholder ? h("option", { value: "" }, opts.placeholder) : null,
+    options.map((o) => h("option", { value: o.value }, o.label)));
+  if (opts.value != null) sel.value = String(opts.value);
+  return h("div", { class: "field" },
+    h("label", { for: id }, label, opts.required ? h("span", { class: "req" }, "必須") : null),
+    sel, h("div", { class: "field-error", id: id + "-e", role: "alert" }));
+}
+function setErr(id, text) {
+  const input = $(id), err = $(id + "-e");
+  if (err) err.textContent = text || "";
+  if (input) { if (text) input.setAttribute("aria-invalid", "true"); else input.removeAttribute("aria-invalid"); }
+  return !text;
+}
+function checkText(id, label, required) {
+  const v = $(id).value.trim();
+  if (required && !v) return setErr(id, `${label}を入力してください`);
+  if ([...v].length > 50) return setErr(id, `${label}は50文字以内で入力してください`);
+  return setErr(id, "");
+}
+function focusFirstError() {
+  const bad = document.querySelector('[aria-invalid="true"]');
+  if (bad) bad.focus();
+}
+
+// ---------- 共通(ナビ・担当者) ----------
+const ROUTES = [["#/inquiries", "一覧"], ["#/inquiries/new", "新規登録"], ["#/reports", "集計"], ["#/masters", "マスタ管理"]];
+function renderNav(hash) {
+  const nav = $("nav");
+  nav.replaceChildren(...ROUTES.map(([href, label]) => {
+    const current = hash === href || (href === "#/inquiries" && /^#\/inquiries\/\d+$/.test(hash));
+    return h("a", { href, "aria-current": current ? "page" : null }, label);
+  }));
+}
+function renderOperator() {
+  const sel = $("operator");
+  const cur = sel.value;
+  sel.replaceChildren(h("option", { value: "" }, "選択してください"),
+    ...employees.filter((e) => e.staff && e.active).map((e) => h("option", { value: e.id }, e.name)));
+  let saved = cur;
+  if (!saved) { try { saved = localStorage.getItem("operator") || ""; } catch (e) { saved = ""; } }
+  sel.value = saved;
+  if (sel.value !== saved) sel.value = "";
+}
+$("operator").addEventListener("change", () => {
+  try { localStorage.setItem("operator", $("operator").value); } catch (e) { /* 保存できない環境では毎回選択 */ }
+  showMessage("");
+});
+
+// ---------- S-01 一覧 ----------
+const listState = { status: "", category: "", assignee: "", dept: "", keyword: "", sort: "received", dir: "desc", page: 1 };
+function viewList() {
+  const depts = [...new Set(employees.map((e) => e.dept))];
+  const f = listState;
+  const filters = h("div", { class: "panel" },
+    h("div", { class: "row" },
+      selectField("ステータス", "f-status", [{ value: "", label: "すべて" }, ...STATUSES.map((x) => ({ value: x, label: x }))], { value: f.status }),
+      selectField("カテゴリ", "f-cat", [{ value: "", label: "すべて" }, ...categories.map((c) => ({ value: c.id, label: c.name }))], { value: f.category }),
+      selectField("担当者", "f-asg", [{ value: "", label: "すべて" }, { value: "none", label: "未割当" }, ...employees.filter((e) => e.staff).map((e) => ({ value: e.id, label: e.name }))], { value: f.assignee }),
+      selectField("依頼者の部署", "f-dept", [{ value: "", label: "すべて" }, ...depts.map((d) => ({ value: d, label: d }))], { value: f.dept }),
+      h("div", { class: "field" }, h("label", { for: "f-kw" }, "キーワード(件名・内容)"), h("input", { id: "f-kw", type: "text", value: f.keyword }))),
+    h("div", { class: "actions" },
+      h("button", { class: "primary", onclick: () => { applyFilters(); } }, "検索"),
+      h("button", { onclick: () => { Object.assign(listState, { status: "", category: "", assignee: "", dept: "", keyword: "", page: 1 }); render(); } }, "条件をクリア"),
+      h("button", { onclick: () => showMessage("サンプルではCSVを出力しません。実際は、現在の絞り込み条件と並び順で全件を出力します。", "info") }, "CSV出力"),
+      h("button", { onclick: () => { location.hash = "#/inquiries/new"; } }, "新規登録")));
+  function applyFilters() {
+    Object.assign(listState, { status: $("f-status").value, category: $("f-cat").value, assignee: $("f-asg").value, dept: $("f-dept").value, keyword: $("f-kw").value.trim(), page: 1 });
+    render();
+  }
+  filters.querySelector("#f-kw").addEventListener("keydown", (e) => { if (e.key === "Enter") applyFilters(); });
+
+  let rows = inquiries.filter((i) =>
+    (!f.status || i.status === f.status) && (!f.category || i.category === Number(f.category)) &&
+    (!f.assignee || (f.assignee === "none" ? i.assignee == null : i.assignee === Number(f.assignee))) &&
+    (!f.dept || emp(i.requester).dept === f.dept) &&
+    (!f.keyword || i.title.includes(f.keyword) || i.body.includes(f.keyword)));
+  const dir = f.dir === "asc" ? 1 : -1;
+  rows.sort((a, b) => {
+    if (f.sort === "priority") return (PRIORITIES.indexOf(a.priority) - PRIORITIES.indexOf(b.priority)) * dir || b.id - a.id;
+    return (a.received < b.received ? -1 : a.received > b.received ? 1 : 0) * dir;
+  });
+  const PER = 20, total = rows.length, pages = Math.max(1, Math.ceil(total / PER));
+  f.page = Math.min(f.page, pages);
+  const start = (f.page - 1) * PER, shown = rows.slice(start, start + PER);
+  const sortBtn = (key, label) => h("button", { onclick: () => { if (f.sort === key) f.dir = f.dir === "asc" ? "desc" : "asc"; else { f.sort = key; f.dir = key === "priority" ? "asc" : "desc"; } render(); },
+    "aria-label": `${label}で並び替え` }, label + (f.sort === key ? (f.dir === "asc" ? " ▲" : " ▼") : ""));
+
+  const table = total === 0 ? h("p", { class: "msg info" }, "該当するデータはありません") :
+    h("table", {},
+      h("thead", {}, h("tr", {}, ["ID", "件名", "カテゴリ", "依頼者(部署)"].map((t) => h("th", {}, t)),
+        h("th", {}, sortBtn("priority", "優先度")), h("th", {}, "ステータス"), h("th", {}, "担当者"), h("th", {}, sortBtn("received", "受付日時")))),
+      h("tbody", {}, shown.map((i) => h("tr", {},
+        h("td", { class: "num" }, String(i.id)),
+        h("td", {}, h("a", { href: `#/inquiries/${i.id}` }, i.title)),
+        h("td", {}, cat(i.category).name), h("td", {}, nameDept(i.requester)),
+        h("td", {}, i.priority), h("td", {}, badge(i.status)),
+        h("td", {}, i.assignee ? emp(i.assignee).name : "未割当"), h("td", {}, i.received.slice(0, 16))))));
+  const pager = total === 0 ? null : h("div", { class: "pager" },
+    h("button", { disabled: f.page <= 1, onclick: () => { f.page--; render(); } }, "前へ"),
+    h("span", {}, `全${total}件中 ${start + 1}〜${start + shown.length}件 / ${f.page}/${pages}ページ`),
+    h("button", { disabled: f.page >= pages, onclick: () => { f.page++; render(); } }, "次へ"));
+  return h("div", {}, h("h2", {}, "問い合わせ一覧"), filters, h("div", { class: "panel" }, table, pager));
+}
+
+// ---------- S-02 登録 ----------
+function viewNew() {
+  const form = h("form", { novalidate: true, onsubmit: (e) => {
+    e.preventDefault();
+    if (!needOperator()) return;
+    const ok = [checkText("n-title", "件名", true), checkText("n-body", "内容", true),
+      $("n-req").value ? setErr("n-req", "") : setErr("n-req", "依頼者を選択してください"),
+      $("n-cat").value ? setErr("n-cat", "") : setErr("n-cat", "カテゴリを選択してください")];
+    const rel = $("n-rel").value.trim();
+    if (rel && !inq(Number(rel))) ok.push(setErr("n-rel", "指定した問い合わせが見つかりません")); else ok.push(setErr("n-rel", ""));
+    if (ok.includes(false)) { focusFirstError(); return; }
+    const id = Math.max(...inquiries.map((i) => i.id)) + 1;
+    const now = nowText();
+    inquiries.push({ id, title: $("n-title").value.trim(), body: $("n-body").value.trim(), requester: Number($("n-req").value),
+      category: Number($("n-cat").value), priority: $("n-pri").value, status: "未対応", assignee: null, received: now, updated: now,
+      closed: null, resolution: "", mins: null, related: rel ? Number(rel) : null,
+      history: [{ at: now, by: operatorId(), text: "問い合わせを登録しました" }] });
+    location.hash = `#/inquiries/${id}`;
+    showMessage("問い合わせを登録しました", "ok");
+  } },
+    textField("件名", "n-title", { required: true }),
+    textField("内容", "n-body", { required: true, multiline: true }),
+    selectField("依頼者", "n-req", employees.filter((e) => e.active).map((e) => ({ value: e.id, label: `${e.name}(${e.dept})` })), { required: true, placeholder: "選択してください" }),
+    selectField("カテゴリ", "n-cat", categories.filter((c) => c.active).sort((a, b) => a.order - b.order).map((c) => ({ value: c.id, label: c.name })), { required: true, placeholder: "選択してください" }),
+    selectField("優先度", "n-pri", PRIORITIES.map((p) => ({ value: p, label: p })), { required: true, value: "中" }),
+    h("div", { class: "field" }, h("label", { for: "n-rel" }, "関連する問い合わせ(ID)"),
+      h("input", { id: "n-rel", type: "number", min: 1 }), h("div", { class: "field-error", id: "n-rel-e", role: "alert" })),
+    h("div", { class: "actions" }, h("button", { class: "primary", type: "submit" }, "登録"),
+      h("button", { type: "button", onclick: () => { location.hash = "#/inquiries"; } }, "キャンセル")));
+  return h("div", {}, h("h2", {}, "問い合わせ登録"), h("div", { class: "panel" }, form));
+}
+
+// ---------- S-03 詳細 ----------
+let editing = false;
+function viewDetail(id) {
+  const i = inq(id);
+  if (!i) return h("div", {}, h("p", { class: "msg error", role: "alert" }, "問い合わせが見つかりません"), h("a", { href: "#/inquiries" }, "一覧へ戻る"));
+  const done = i.status === "完了";
+  const log = (text) => { i.history.push({ at: nowText(), by: operatorId(), text }); i.updated = nowText(); };
+  const NEXT = { "未対応": ["対応中"], "対応中": ["保留", "完了"], "保留": ["対応中"], "完了": [] };
+  const btnLabel = { "対応中": i.status === "保留" ? "対応中に戻す" : "対応中にする", "保留": "保留にする", "完了": "完了にする" };
+
+  function changeStatus(to) {
+    if (!needOperator()) return;
+    if (!i.assignee) { showMessage("担当者を割り当ててください", "error"); return; }
+    if (to === "完了") { openCompleteDialog(i, log); return; }
+    log(`ステータスを「${i.status}」から「${to}」に変更`);
+    i.status = to;
+    showMessage(`ステータスを「${to}」に変更しました`, "ok");
+    render(false);
+  }
+  const info = h("dl", { class: "info" },
+    h("dt", {}, "依頼者"), h("dd", {}, nameDept(i.requester)),
+    h("dt", {}, "内容"), h("dd", {}, i.body),
+    h("dt", {}, "カテゴリ"), h("dd", {}, cat(i.category).name),
+    h("dt", {}, "優先度"), h("dd", {}, i.priority),
+    h("dt", {}, "担当者"), h("dd", {}, i.assignee ? emp(i.assignee).name : "未割当"),
+    h("dt", {}, "受付日時"), h("dd", {}, i.received),
+    h("dt", {}, "更新日時"), h("dd", {}, i.updated),
+    h("dt", {}, "関連する問い合わせ"), h("dd", {}, i.related ? h("a", { href: `#/inquiries/${i.related}` }, `#${i.related} ${inq(i.related)?.title ?? ""}`) : "なし"),
+    done ? [h("dt", {}, "完了日時"), h("dd", {}, i.closed), h("dt", {}, "対応内容"), h("dd", {}, i.resolution),
+      h("dt", {}, "対応時間"), h("dd", {}, fmtMins(i.mins))] : null);
+
+  let ops;
+  if (done) {
+    ops = h("div", {}, h("p", { class: "msg info" }, "完了済みのため編集できません。再度の対応が必要な場合は、新規に登録してください。"),
+      h("a", { href: "#/inquiries/new" }, "新規登録へ"));
+  } else if (editing) {
+    ops = h("form", { novalidate: true, onsubmit: (e) => {
+      e.preventDefault();
+      if (!needOperator()) return;
+      const ok = [checkText("e-title", "件名", true), checkText("e-body", "内容", true)];
+      if (ok.includes(false)) { focusFirstError(); return; }
+      i.title = $("e-title").value.trim(); i.body = $("e-body").value.trim();
+      i.category = Number($("e-cat").value); i.priority = $("e-pri").value;
+      log("件名・内容・カテゴリ・優先度を編集"); editing = false; showMessage("保存しました", "ok"); render(false);
+    } },
+      textField("件名", "e-title", { required: true, value: i.title }),
+      textField("内容", "e-body", { required: true, multiline: true, value: i.body }),
+      selectField("カテゴリ", "e-cat", categories.map((c) => ({ value: c.id, label: c.name })), { required: true, value: i.category }),
+      selectField("優先度", "e-pri", PRIORITIES.map((p) => ({ value: p, label: p })), { required: true, value: i.priority }),
+      h("div", { class: "actions" }, h("button", { class: "primary", type: "submit" }, "保存"),
+        h("button", { type: "button", onclick: () => { editing = false; render(false); } }, "キャンセル")));
+  } else {
+    const asg = selectField("担当者", "d-asg", [{ value: "", label: "未割当" }, ...employees.filter((e) => e.staff && e.active).map((e) => ({ value: e.id, label: e.name }))], { value: i.assignee ?? "" });
+    asg.style.marginBottom = "0";
+    ops = h("div", {},
+      h("div", { class: "actions" }, NEXT[i.status].map((to) => h("button", { class: to === "完了" ? "primary" : "", onclick: () => changeStatus(to) }, btnLabel[to]))),
+      h("div", { class: "row" }, asg, h("button", { onclick: () => {
+        if (!needOperator()) return;
+        const v = $("d-asg").value;
+        if (!v) { showMessage("担当者を選択してください", "error"); return; }
+        log(`担当者を「${emp(Number(v)).name}」に変更`); i.assignee = Number(v); showMessage("担当者を割り当てました", "ok"); render(false);
+      } }, "割り当てる")),
+      h("div", { class: "actions" }, h("button", { onclick: () => { editing = true; render(false); } }, "編集")));
+  }
+  const comment = h("div", { class: "field", style: "margin-top:12px" },
+    h("label", { for: "c-text" }, "コメント"), h("input", { id: "c-text", type: "text", "aria-describedby": "c-text-c" }),
+    h("div", { class: "counter", id: "c-text-c" }, "0/50"), h("div", { class: "field-error", id: "c-text-e", role: "alert" }),
+    h("div", { class: "actions" }, h("button", { onclick: () => {
+      if (!needOperator()) return;
+      if (!checkText("c-text", "コメント", true)) { focusFirstError(); return; }
+      log("コメント: " + $("c-text").value.trim()); showMessage("コメントを追加しました", "ok"); render(false);
+    } }, "追加")));
+  comment.querySelector("#c-text").addEventListener("input", (e) => { $("c-text-c").textContent = `${[...e.target.value].length}/50`; });
+
+  return h("div", {},
+    h("h2", {}, `#${i.id} ${i.title} `, badge(i.status)),
+    h("div", { class: "panel" }, h("h3", {}, "基本情報"), info),
+    h("div", { class: "panel" }, h("h3", {}, "操作"), ops),
+    h("div", { class: "panel" }, h("h3", {}, "対応履歴(古い順)"),
+      h("ul", { class: "history" }, i.history.map((x) => h("li", {}, h("span", { class: "when" }, x.at.slice(0, 16)), h("strong", {}, emp(x.by)?.name ?? ""), "  ", x.text))),
+      comment),
+    h("p", {}, h("a", { href: "#/inquiries" }, "一覧へ戻る")));
+}
+function openCompleteDialog(i, log) {
+  const dlg = $("dlg");
+  const body = h("form", { method: "dialog", novalidate: true, onsubmit: (e) => {
+    e.preventDefault();
+    if (!checkText("x-res", "対応内容", true)) { $("x-res").focus(); return; }
+    i.resolution = $("x-res").value.trim();
+    i.mins = 200; // サンプルの固定値(実際は営業時間で計算)
+    i.closed = nowText();
+    log("ステータスを「" + i.status + "」から「完了」に変更");
+    i.status = "完了";
+    dlg.close();
+    showMessage("完了にしました", "ok");
+    render(false);
+  } },
+    h("h3", {}, "完了にする"),
+    h("p", {}, "完了にすると、元に戻せません。対応内容を入力してください。"),
+    textField("対応内容", "x-res", { required: true }),
+    h("div", { class: "actions" }, h("button", { class: "primary", type: "submit" }, "完了にする"),
+      h("button", { type: "button", onclick: () => dlg.close() }, "キャンセル")));
+  dlg.replaceChildren(body);
+  dlg.showModal();
+  $("x-res").focus();
+}
+
+// ---------- グラフ(素のJavaScriptでSVG描画) ----------
+function barChart(items, title, fmt) {
+  const W = 480, rowH = 30, padL = 130, padR = 56, H = items.length * rowH + 16;
+  const max = Math.max(1, ...items.map((x) => x.value));
+  const svg = s("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": title });
+  svg.append(s("title", {}, title));
+  items.forEach((x, n) => {
+    const y = 8 + n * rowH, w = Math.round(((W - padL - padR) * x.value) / max);
+    svg.append(s("text", { x: padL - 8, y: y + 17, "text-anchor": "end", "font-size": 12, fill: "#1f2933" }, x.label));
+    svg.append(s("rect", { x: padL, y, width: Math.max(w, 0), height: 22, fill: "#3b6fd8" }));
+    svg.append(s("text", { x: padL + w + 6, y: y + 17, "font-size": 12, fill: "#1f2933" }, fmt ? fmt(x) : String(x.value)));
+  });
+  return svg;
+}
+function groupedBarChart(items, title) {
+  const W = 480, rowH = 50, padL = 110, padR = 40, H = items.length * rowH + 16;
+  const max = Math.max(1, ...items.flatMap((x) => [x.done, x.open]));
+  const svg = s("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": title });
+  svg.append(s("title", {}, title));
+  const defs = s("defs"); const pat = s("pattern", { id: "hatch", width: 6, height: 6, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" });
+  pat.append(s("rect", { width: 6, height: 6, fill: "#fff" }), s("rect", { width: 3, height: 6, fill: "#8aa8e8" }));
+  defs.append(pat); svg.append(defs);
+  items.forEach((x, n) => {
+    const y = 8 + n * rowH, wd = Math.round(((W - padL - padR) * x.done) / max), wo = Math.round(((W - padL - padR) * x.open) / max);
+    svg.append(s("text", { x: padL - 8, y: y + 20, "text-anchor": "end", "font-size": 12 }, x.label));
+    svg.append(s("rect", { x: padL, y, width: wd, height: 18, fill: "#3b6fd8" }));
+    svg.append(s("text", { x: padL + wd + 6, y: y + 14, "font-size": 12 }, String(x.done)));
+    svg.append(s("rect", { x: padL, y: y + 22, width: wo, height: 18, fill: "url(#hatch)", stroke: "#3b6fd8" }));
+    svg.append(s("text", { x: padL + wo + 6, y: y + 36, "font-size": 12 }, String(x.open)));
+  });
+  return svg;
+}
+function lineChart(items, title) {
+  const W = 480, H = 220, padL = 40, padR = 20, padT = 24, padB = 40;
+  const max = Math.max(1, ...items.map((x) => x.value));
+  const svg = s("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": title });
+  svg.append(s("title", {}, title));
+  svg.append(s("line", { x1: padL, y1: H - padB, x2: W - padR, y2: H - padB, stroke: "#8a94a3" }));
+  svg.append(s("line", { x1: padL, y1: padT, x2: padL, y2: H - padB, stroke: "#8a94a3" }));
+  const step = items.length > 1 ? (W - padL - padR - 20) / (items.length - 1) : 0;
+  const pts = items.map((x, n) => [padL + 10 + n * step, H - padB - ((H - padB - padT) * x.value) / max]);
+  svg.append(s("polyline", { points: pts.map((p) => p.join(",")).join(" "), fill: "none", stroke: "#3b6fd8", "stroke-width": 2 }));
+  pts.forEach((p, n) => {
+    svg.append(s("circle", { cx: p[0], cy: p[1], r: 4, fill: "#3b6fd8" }));
+    svg.append(s("text", { x: p[0], y: p[1] - 9, "text-anchor": "middle", "font-size": 12 }, String(items[n].value)));
+    svg.append(s("text", { x: p[0], y: H - padB + 18, "text-anchor": "middle", "font-size": 12 }, items[n].label));
+  });
+  return svg;
+}
+
+// ---------- S-04 集計 ----------
+const reportState = { from: "2026-07-01", to: TODAY, month: "2026-09" };
+function viewReports() {
+  const st = reportState;
+  const inRange = inquiries.filter((i) => dateOnly(i.received) >= st.from && dateOnly(i.received) <= st.to);
+  const countBy = (keyFn, keys) => keys.map((k) => ({ label: k, value: inRange.filter((i) => keyFn(i) === k).length }));
+  const a1 = categories.map((c) => ({ label: c.name, value: inRange.filter((i) => i.category === c.id).length }));
+  const depts = [...new Set(employees.map((e) => e.dept))];
+  const a2 = countBy((i) => emp(i.requester).dept, depts);
+  const a3 = categories.map((c) => {
+    const d = inRange.filter((i) => i.category === c.id && i.status === "完了");
+    const avg = d.length ? Math.floor(d.reduce((t, i) => t + i.mins, 0) / d.length) : null;
+    return { label: c.name, count: d.length, avg, value: avg ?? 0 };
+  });
+  const a4 = employees.filter((e) => e.staff).map((e) => ({ label: e.name,
+    done: inRange.filter((i) => i.assignee === e.id && i.status === "完了").length,
+    open: inRange.filter((i) => i.assignee === e.id && i.status !== "完了").length }));
+  const months = [...new Set(inRange.map((i) => dateOnly(i.received).slice(0, 7)))].sort();
+  const a5 = months.map((m) => ({ label: m.replace("-", "/"), value: inRange.filter((i) => dateOnly(i.received).startsWith(m)).length }));
+  const a6 = STATUSES.map((x) => ({ label: x, value: inRange.filter((i) => i.status === x).length }));
+
+  const csvBtn = () => h("button", { onclick: () => showMessage("サンプルではCSVを出力しません。実際は、指定した期間の集計表をCSVでダウンロードします。", "info") }, "CSV出力");
+  const table = (heads, rows, numCols = []) => h("table", {}, h("thead", {}, h("tr", {}, heads.map((t, n) => h("th", { class: numCols.includes(n) ? "num" : "" }, t)))),
+    h("tbody", {}, rows.map((r) => h("tr", {}, r.map((c, n) => h("td", { class: numCols.includes(n) ? "num" : "" }, String(c)))))));
+  const section = (id, name, tbl, chart, legend) => h("section", { class: "panel", "aria-labelledby": "h-" + id },
+    h("div", { class: "actions", style: "margin-top:0" }, h("h3", { id: "h-" + id, style: "margin:0;flex:1" }, `${id} ${name}`), csvBtn()),
+    legend || null,
+    h("div", { class: "report-grid" }, tbl, chart));
+
+  const savedList = reportsSaved.length === 0 ? h("p", { class: "muted" }, "保存済みの月はありません") :
+    table(["月", "保存日時", "ファイル"], reportsSaved.map((r) => [r.month.replace("-", "/"), r.savedAt, `data/reports/${r.month}/(CSV 6件・SVG 6件)`]));
+  const controls = h("div", { class: "panel" },
+    h("div", { class: "row" },
+      h("div", { class: "field" }, h("label", { for: "r-from" }, "開始日"), h("input", { id: "r-from", type: "date", value: st.from })),
+      h("div", { class: "field" }, h("label", { for: "r-to" }, "終了日"), h("input", { id: "r-to", type: "date", value: st.to })),
+      h("button", { class: "primary", onclick: () => {
+        const f = $("r-from").value, t = $("r-to").value;
+        if (!f || !t || f > t) { showMessage("開始日と終了日を正しく入力してください", "error"); return; }
+        st.from = f; st.to = t; showMessage(""); render(false);
+      } }, "表示")),
+    h("hr", { style: "border:0;border-top:1px solid var(--border);margin:16px 0" }),
+    h("div", { class: "row" },
+      h("div", { class: "field" }, h("label", { for: "r-month" }, "対象月(月次保存)"), h("input", { id: "r-month", type: "month", value: st.month })),
+      h("button", { onclick: () => {
+        if (!needOperator()) return;
+        const m = $("r-month").value;
+        if (!m) { showMessage("対象月を選択してください", "error"); return; }
+        const exists = reportsSaved.find((r) => r.month === m);
+        const doSave = () => {
+          if (exists) exists.savedAt = nowText(); else reportsSaved.push({ month: m, savedAt: nowText() });
+          reportsSaved.sort((a, b) => (a.month < b.month ? -1 : 1));
+          st.month = m; showMessage(`${m.replace("-", "/")}の集計を保存しました`, "ok"); render(false);
+        };
+        if (exists) confirmDialog(`${m.replace("-", "/")}は保存済みです。上書きします。`, doSave); else doSave();
+      } }, "月次集計を保存")),
+    h("h3", { style: "margin-top:16px" }, "保存済みの月"), savedList);
+
+  return h("div", {}, h("h2", {}, "集計"), controls,
+    inRange.length === 0 ? h("p", { class: "msg info" }, "該当するデータはありません") : [
+      section("A-01", "カテゴリ別件数", table(["カテゴリ", "件数"], a1.map((x) => [x.label, x.value]), [1]), barChart(a1, "カテゴリ別件数")),
+      section("A-02", "部署別件数", table(["部署", "件数"], a2.map((x) => [x.label, x.value]), [1]), barChart(a2, "部署別件数")),
+      section("A-03", "カテゴリ別平均対応時間", table(["カテゴリ", "完了件数", "平均対応時間"], a3.map((x) => [x.label, x.count, fmtMins(x.avg)]), [1, 2]),
+        barChart(a3, "カテゴリ別平均対応時間", (x) => (x.avg == null ? "-" : fmtMins(x.avg)))),
+      section("A-04", "担当者別処理件数", table(["担当者", "完了件数", "未完了件数"], a4.map((x) => [x.label, x.done, x.open]), [1, 2]), groupedBarChart(a4, "担当者別処理件数"),
+        h("div", { class: "legend" }, h("span", { class: "l-done" }, "完了"), h("span", { class: "l-open" }, "未完了"))),
+      section("A-05", "月別受付件数の推移", table(["月", "件数"], a5.map((x) => [x.label, x.value]), [1]), lineChart(a5, "月別受付件数の推移")),
+      section("A-06", "ステータス別件数", table(["ステータス", "件数"], a6.map((x) => [x.label, x.value]), [1]), barChart(a6, "ステータス別件数")),
+    ]);
+}
+function confirmDialog(text, onOk) {
+  const dlg = $("dlg");
+  dlg.replaceChildren(h("div", {}, h("p", {}, text),
+    h("div", { class: "actions" }, h("button", { class: "primary", onclick: () => { dlg.close(); onOk(); } }, "実行"),
+      h("button", { onclick: () => dlg.close() }, "キャンセル"))));
+  dlg.showModal();
+}
+
+// ---------- S-05 マスタ管理 ----------
+let masterTab = "employees", editingRow = null;
+function viewMasters() {
+  const tabs = h("div", { class: "tabs", role: "tablist" },
+    [["employees", "社員"], ["categories", "カテゴリ"]].map(([k, label]) =>
+      h("button", { role: "tab", "aria-selected": masterTab === k ? "true" : "false", onclick: () => { masterTab = k; editingRow = null; render(false); } }, label)));
+  const isEmp = masterTab === "employees";
+  const list = isEmp ? employees : categories;
+  const unfinishedAssignee = (id) => inquiries.some((i) => i.assignee === id && i.status !== "完了");
+  const toggle = (row) => {
+    if (!needOperator()) return;
+    if (isEmp && row.active && unfinishedAssignee(row.id)) { showMessage("未完了の問い合わせの担当者になっているため、無効にできません", "error"); return; }
+    row.active = !row.active; showMessage(row.active ? "有効にしました" : "無効にしました", "ok"); renderOperator(); render(false);
+  };
+  const header = isEmp ? ["氏名", "部署", "担当者区分", "状態", "操作"] : ["名称", "表示順", "状態", "操作"];
+  const body = list.map((row) => {
+    if (editingRow === row.id) {
+      const cells = isEmp ? [h("input", { id: "m-a", type: "text", value: row.name, "aria-label": "氏名" }), h("input", { id: "m-b", type: "text", value: row.dept, "aria-label": "部署" }),
+          h("select", { id: "m-c", "aria-label": "担当者区分" }, h("option", { value: "1" }, "担当者"), h("option", { value: "0" }, "一般"))]
+        : [h("input", { id: "m-a", type: "text", value: row.name, "aria-label": "名称" }), h("input", { id: "m-b", type: "number", value: row.order, "aria-label": "表示順" })];
+      if (isEmp) cells[2].value = row.staff ? "1" : "0";
+      return h("tr", {}, cells.map((c) => h("td", {}, c)), h("td", {}, row.active ? "有効" : "無効"),
+        h("td", {}, h("button", { class: "primary", onclick: () => {
+          const a = $("m-a").value.trim(), b = $("m-b").value.trim();
+          if (!a || [...a].length > 50 || (isEmp && (!b || [...b].length > 50)) || (!isEmp && !b)) {
+            showMessage([...a].length > 50 || [...b].length > 50 ? "50文字以内で入力してください" : "必須項目を入力してください", "error"); return;
+          }
+          if (isEmp) { row.name = a; row.dept = b; row.staff = $("m-c").value === "1"; } else { row.name = a; row.order = Number(b); }
+          editingRow = null; showMessage("保存しました", "ok"); renderOperator(); render(false);
+        } }, "保存"), " ", h("button", { onclick: () => { editingRow = null; render(false); } }, "キャンセル")));
+    }
+    const cells = isEmp ? [row.name, row.dept, row.staff ? "担当者" : "一般"] : [row.name, row.order];
+    return h("tr", {}, cells.map((c) => h("td", {}, String(c))), h("td", {}, h("span", { class: "badge", style: row.active ? "" : "background:#e5e7eb" }, row.active ? "有効" : "無効")),
+      h("td", {}, h("button", { onclick: () => { editingRow = row.id; render(false); } }, "編集"), " ",
+        h("button", { onclick: () => toggle(row) }, row.active ? "無効にする" : "有効にする")));
+  });
+  const addForm = h("form", { class: "row", novalidate: true, onsubmit: (e) => {
+    e.preventDefault();
+    if (!needOperator()) return;
+    const a = $("a-a").value.trim(), b = $("a-b").value.trim();
+    if (!a || !b) { showMessage("必須項目を入力してください", "error"); return; }
+    if ([...a].length > 50 || (isEmp && [...b].length > 50)) { showMessage("50文字以内で入力してください", "error"); return; }
+    if (isEmp) employees.push({ id: Math.max(...employees.map((x) => x.id)) + 1, name: a, dept: b, staff: $("a-c").value === "1", active: true });
+    else categories.push({ id: Math.max(...categories.map((x) => x.id)) + 1, name: a, order: Number(b), active: true });
+    showMessage("追加しました", "ok"); renderOperator(); render(false);
+  } },
+    h("div", { class: "field" }, h("label", { for: "a-a" }, isEmp ? "氏名" : "名称", h("span", { class: "req" }, "必須")), h("input", { id: "a-a", type: "text" })),
+    h("div", { class: "field" }, h("label", { for: "a-b" }, isEmp ? "部署" : "表示順", h("span", { class: "req" }, "必須")), h("input", { id: "a-b", type: isEmp ? "text" : "number" })),
+    isEmp ? h("div", { class: "field" }, h("label", { for: "a-c" }, "担当者区分"), h("select", { id: "a-c" }, h("option", { value: "0" }, "一般"), h("option", { value: "1" }, "担当者"))) : null,
+    h("button", { class: "primary", type: "submit" }, "追加"));
+  return h("div", {}, h("h2", {}, "マスタ管理"), tabs,
+    h("div", { class: "panel" }, h("h3", {}, isEmp ? "社員を追加" : "カテゴリを追加"), addForm),
+    h("div", { class: "panel" }, h("table", {}, h("thead", {}, h("tr", {}, header.map((t) => h("th", {}, t)))), h("tbody", {}, body)),
+      h("p", { class: "muted" }, "削除はできません。無効にした項目は、新規の選択肢には表示されません。")));
+}
+
+// ---------- ルーティング ----------
+function render(clearMessage = true) {
+  const hash = location.hash || "#/inquiries";
+  if (clearMessage) showMessage("");
+  renderNav(hash);
+  let view;
+  if (hash === "#/inquiries") view = viewList();
+  else if (hash === "#/inquiries/new") view = viewNew();
+  else if (/^#\/inquiries\/\d+$/.test(hash)) view = viewDetail(Number(hash.split("/").pop()));
+  else if (hash === "#/reports") view = viewReports();
+  else if (hash === "#/masters") view = viewMasters();
+  else view = h("p", { class: "msg error", role: "alert" }, "画面が見つかりません");
+  $("view").replaceChildren(view);
+}
+let lastHash = null;
+window.addEventListener("hashchange", () => { editing = false; editingRow = null; const keep = lastHash === "#/inquiries/new"; render(!keep); lastHash = location.hash; });
+renderOperator();
+render();
+lastHash = location.hash;
+</script>
+</body>
+</html>
