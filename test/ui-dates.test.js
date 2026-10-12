@@ -5,8 +5,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createApi } from '../public/js/api.js';
 import {
-  defaultRange, firstOfMonth, formatMonth, isDateText, isMonthText, parseReportRange, previousMonth,
-  toDateText, validateRange,
+  defaultRange, exceedsMaxRange, firstOfMonth, formatMonth, isDateText, isMonthText, MAX_RANGE_YEARS,
+  parseReportRange, previousMonth, RANGE_TOO_WIDE_MESSAGE, toDateText, validateRange,
 } from '../public/js/dates.js';
 import { isDateString, parseDateRange } from '../src/domain/validation.js';
 
@@ -53,6 +53,9 @@ test('期間の検証: 画面とサーバーが、同じ入力に同じ結論と
   const cases = [
     ['2026-07-01', '2026-10-12'], ['2026-10-12', '2026-10-12'], ['2026-10-13', '2026-10-12'],
     ['', '2026-10-12'], ['2026-07-01', ''], ['', ''], ['2026-02-30', '2026-03-01'], ['abc', '2026-03-01'],
+    // 期間の上限(10年)。境界・うるう日・極端に広い期間
+    ['2016-10-12', '2026-10-12'], ['2016-10-11', '2026-10-12'], ['2020-02-29', '2030-03-01'], ['2020-02-29', '2030-03-02'],
+    ['0100-01-01', '9999-12-31'], ['2000-01-01', '2100-12-31'],
   ];
   for (const [from, to] of cases) {
     const client = validateRange(from, to);
@@ -64,6 +67,13 @@ test('期間の検証: 画面とサーバーが、同じ入力に同じ結論と
     }
     assert.deepEqual(client, server, `${from} 〜 ${to}`);
   }
+});
+
+test('期間の上限: 文言と年数が一致している', () => {
+  assert.equal(RANGE_TOO_WIDE_MESSAGE, `集計期間は${MAX_RANGE_YEARS}年以内にしてください`);
+  assert.equal(MAX_RANGE_YEARS, 10);
+  assert.equal(exceedsMaxRange('2016-10-12', '2026-10-12'), false);
+  assert.equal(exceedsMaxRange('2016-10-12', '2026-10-13'), true);
 });
 
 test('月の表示: YYYY/MM', () => {

@@ -61,7 +61,21 @@ export function validateRange(from, to) {
   if (!to) errors.to = '終了日を入力してください';
   else if (!isDateText(to)) errors.to = '終了日を正しく入力してください';
   if (!errors.from && !errors.to && from > to) errors.from = '開始日は終了日以前の日付にしてください';
+  if (!errors.from && !errors.to && exceedsMaxRange(from, to)) errors.to = RANGE_TOO_WIDE_MESSAGE;
   return errors;
+}
+
+/** 集計期間の上限(年)。極端に広い期間で、集計や画面が重くならないようにする。 */
+export const MAX_RANGE_YEARS = 10;
+// 文言は、画面設計書 2.3 と一致させる(test/consistency.test.js が、設計書の文言がコードにあることを確認する)
+export const RANGE_TOO_WIDE_MESSAGE = '集計期間は10年以内にしてください';
+
+/** 開始日から MAX_RANGE_YEARS 年を超える期間か(どちらも実在する日付であること)。 */
+export function exceedsMaxRange(from, to) {
+  const [y, m, d] = from.split('-').map(Number);
+  const limit = new Date(Date.UTC(y + MAX_RANGE_YEARS, m - 1, d));
+  const text = `${limit.getUTCFullYear()}-${pad(limit.getUTCMonth() + 1)}-${pad(limit.getUTCDate())}`;
+  return to > text;
 }
 
 /** 'YYYY-MM' を 'YYYY/MM' にする。 */

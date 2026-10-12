@@ -150,6 +150,30 @@ test('集計: 期間の指定が不正なら 400', () => withApp(async (app) => 
   }
 }));
 
+test('集計: 期間が10年を超えると 400(10年ちょうどは受理)。極端に広い期間でも、すぐに応答する', () => withApp(async (app) => {
+  const ok = await app.api('GET', '/api/reports/summary?from=2016-10-12&to=2026-10-12', { operator: null });
+  assert.equal(ok.status, 200);
+  assert.equal(ok.body.a05.length, 121); // 2016/10 〜 2026/10
+
+  const over = await app.api('GET', '/api/reports/summary?from=2016-10-11&to=2026-10-12', { operator: null });
+  assert.equal(over.status, 400);
+  assert.deepEqual(over.body.error.fields, [{ field: 'to', message: '集計期間は10年以内にしてください' }]);
+
+  // うるう日の開始(2020-02-29 の10年後は 2030-03-01)
+  assert.equal((await app.api('GET', '/api/reports/summary?from=2020-02-29&to=2030-03-01', { operator: null })).status, 200);
+  assert.equal((await app.api('GET', '/api/reports/summary?from=2020-02-29&to=2030-03-02', { operator: null })).status, 400);
+
+  // 以前は 0100〜9999年の指定で、集計に約34秒かかり、サーバー全体が止まっていた
+  const started = Date.now();
+  const huge = await app.api('GET', '/api/reports/summary?from=0100-01-01&to=9999-12-31', { operator: null });
+  assert.equal(huge.status, 400);
+  assert.ok(Date.now() - started < 1000);
+
+  // CSV出力にも、同じ上限がある
+  const csv = await app.api('GET', '/api/reports/export.csv?type=a05&from=2000-01-01&to=2026-10-12', { operator: null });
+  assert.equal(csv.status, 400);
+}));
+
 // ---------- CSV出力 ----------
 
 test('一覧CSV: BOM付き・ヘッダー・ファイル名・絞り込みを反映し、全件を出力する(ページに関係なく)', () => withApp(async (app) => {

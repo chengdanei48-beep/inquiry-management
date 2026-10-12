@@ -124,7 +124,8 @@ export const inquiryRoutes = [
       const input = parseInquiryPatch(await readJson());
       assertFresh(row, input.updatedAt);
       assertNotLocked(row.status);
-      if (input.categoryId !== undefined) assertActiveCategory(db, input.categoryId);
+      // 後から無効になったカテゴリの問い合わせも、カテゴリを変えない編集はできる(変更するときだけ有効かを確認する)
+      if (input.categoryId !== undefined && input.categoryId !== row.category_id) assertActiveCategory(db, input.categoryId);
 
       const LABELS = { title: '件名', body: '内容', category_id: 'カテゴリ', priority: '優先度' };
       const changes = {};

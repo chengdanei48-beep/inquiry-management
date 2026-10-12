@@ -126,6 +126,18 @@ F-11(サンプルデータ投入)はAPIを持たず、`npm run seed`(npm スク�
 
 ## 5. 主要APIの詳細
 
+問い合わせの変更系(5.4〜5.7)は、次の順に判定し、最初に該当したエラーを返す。
+
+| 順 | 判定 | 応答 |
+|---|---|---|
+| 1 | 操作者(`X-Operator-Id`)が有効な担当者か | 400 `OPERATOR_REQUIRED` |
+| 2 | 対象の問い合わせが存在するか | 404 `NOT_FOUND` |
+| 3 | 入力の検証(必須・50文字・選択肢) | 400 `VALIDATION_ERROR` |
+| 4 | 更新日時が現在の値と一致するか | 409 `STALE_UPDATE` |
+| 5 | 状態・業務ルール(遷移・担当者・完了済み) | 409 |
+
+したがって、入力の不備と更新日時の不一致が同時にあるときは、入力の不備(400)を先に返す。
+
 ### 5.1 `GET /api/inquiries`(一覧)
 
 | クエリ | 型 | 内容 |
@@ -237,7 +249,7 @@ F-11(サンプルデータ投入)はAPIを持たず、`npm run seed`(npm スク�
 - 0件の項目も返す: 有効なカテゴリ、有効な社員がいる部署、有効な担当者、期間内のすべての月、4つのステータス。無効なカテゴリ・期間内に担当した無効な社員は、件数があるときだけ返す。
 - `a04` は、担当者が未割当の問い合わせがあるとき、末尾に `{ "assignee": "未割当", "done": 0, "open": 件数 }` を返す。
 - `a02` は件数の多い順(同数は部署名順)。`a01`・`a03` は表示順。
-- `from` が `to` より後、または日付形式が不正な場合は 400。
+- `from` が `to` より後、日付形式が不正、または期間が10年を超える(`from` の10年後の日付より後に `to` がある)場合は 400。10年を超える場合のエラーは、項目 `to`(「集計期間は10年以内にしてください」)。CSV出力(5.10)にも同じ上限がある。
 
 ### 5.10 CSV出力
 
@@ -452,9 +464,9 @@ erDiagram
 | id | INTEGER | PK、自動採番 | 履歴ID |
 | inquiry_id | INTEGER | NOT NULL、FK → inquiries | 問い合わせ |
 | type | TEXT | NOT NULL、CHECK | 種別: `registered`(登録)/ `status`(ステータス変更)/ `assignee`(担当者変更)/ `comment`(コメント)/ `edit`(編集) |
-| from_status | TEXT | NULL可 | 変更前のステータス(`status` のみ) |
-| to_status | TEXT | NULL可 | 変更後のステータス(`status` のみ) |
-| content | TEXT | NULL可 | コメントの内容、変更内容の説明 |
+| from_status | TEXT | NULL可。値は4つのステータスのいずれか | 変更前のステータス(`type` が `status` のとき必須) |
+| to_status | TEXT | NULL可。値は4つのステータスのいずれか | 変更後のステータス(`type` が `status` のとき必須) |
+| content | TEXT | NULL可 | コメントの内容、変更内容の説明。`type` が `comment` のときは必須(1〜50文字) |
 | operator_id | INTEGER | NOT NULL、FK → employees | 操作者 |
 | at | TEXT | NOT NULL | 日時 |
 

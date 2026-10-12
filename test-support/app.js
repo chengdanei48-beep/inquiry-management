@@ -72,7 +72,7 @@ export async function startTestApp({ now = '2026-10-12 09:00:00.000', masters = 
   };
 
   return {
-    db, clock, api, logs, validInquiry, reportsDir,
+    db, clock, api, logs, validInquiry, reportsDir, port: server.address().port,
     /** 問い合わせを登録して、詳細を返す。 */
     async create(overrides = {}, opts = {}) {
       const res = await api('POST', '/api/inquiries', { body: { ...validInquiry, ...overrides }, ...opts });
