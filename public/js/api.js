@@ -82,5 +82,16 @@ export function createApi({ fetchFn = (...args) => fetch(...args), getOperatorId
     listEmployees: (query) => request('GET', '/api/employees', { query }),
     listCategories: (query) => request('GET', '/api/categories', { query }),
     inquiriesCsvUrl: (query) => `/api/inquiries/export.csv${buildQuery(query)}`,
+    // マスタ
+    createEmployee: (body) => request('POST', '/api/employees', { body }),
+    updateEmployee: (id, body) => request('PATCH', `/api/employees/${id}`, { body }),
+    createCategory: (body) => request('POST', '/api/categories', { body }),
+    updateCategory: (id, body) => request('PATCH', `/api/categories/${id}`, { body }),
+    // 集計・CSV・月次保存
+    getSummary: (from, to) => request('GET', '/api/reports/summary', { query: { from, to } }),
+    reportCsvUrl: (type, from, to) => `/api/reports/export.csv${buildQuery({ type, from, to })}`,
+    saveMonthly: (month) => request('POST', '/api/reports/monthly', { body: { month } }),
+    listMonthly: () => request('GET', '/api/reports/monthly'),
+    monthlyFileUrl: (month, file) => `/api/reports/monthly/${encodeURIComponent(month)}/${encodeURIComponent(file)}`,
   };
 }

@@ -7,7 +7,9 @@ import { MENU, menuOf, parseRoute } from './route.js';
 import { renderInquiryDetail } from './views/inquiry-detail.js';
 import { renderInquiryList } from './views/inquiry-list.js';
 import { renderInquiryNew } from './views/inquiry-new.js';
+import { renderMasters } from './views/masters.js';
 import { renderPlaceholder } from './views/placeholder.js';
+import { renderReports } from './views/reports.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -76,12 +78,23 @@ async function loadOperators() {
 
 const needsOperator = (route) => route.name !== 'list' && route.name !== 'notfound';
 
+// 担当者が1人もいない初期状態の案内(マスタ管理で、最初の担当者を追加する)
+const NO_STAFF_MESSAGE = 'まだ担当者が登録されていません。「マスタ管理」で、最初の担当者(担当者区分)を追加してください。';
+
+/** 画面を開いたときに出す案内(無ければ null)。 */
+function guidanceFor(route) {
+  if (!needsOperator(route)) return null;
+  if (operators.length === 0) return { text: NO_STAFF_MESSAGE, kind: 'info' };
+  if (operatorId === null) return { text: OPERATOR_REQUIRED_MESSAGE, kind: 'info' };
+  return null;
+}
+
 const VIEWS = {
   list: renderInquiryList,
   new: renderInquiryNew,
   detail: renderInquiryDetail,
-  reports: (c, r) => renderPlaceholder(c, r, '集計'),
-  masters: (c, r) => renderPlaceholder(c, r, 'マスタ管理'),
+  reports: renderReports,
+  masters: renderMasters,
   notfound: (c, r) => renderPlaceholder(c, r, '画面'),
 };
 
@@ -109,8 +122,9 @@ async function render() {
   if (flashMessage) {
     message(flashMessage.text, flashMessage.kind);
     flashMessage = null;
-  } else if (operatorId === null && needsOperator(route)) {
-    message(OPERATOR_REQUIRED_MESSAGE, 'info');
+  } else {
+    const guidance = guidanceFor(route);
+    if (guidance) message(guidance.text, guidance.kind);
   }
 
   const view = $('view');
@@ -154,6 +168,13 @@ const ctx = {
   refresh: render,
   requireOperator,
   loadOperators,
+  /** 操作する担当者を設定する(最初の担当者を追加した直後など)。 */
+  setOperator(id) {
+    operatorId = id;
+    store.set(id);
+    renderOperatorSelect();
+    updateOperatorButtons();
+  },
   /** 操作する担当者が未選択の間、無効にするボタンとして登録する。 */
   bindOperator(el) {
     operatorBound.add(el);
@@ -167,7 +188,8 @@ $('operator').addEventListener('change', (e) => {
   store.set(operatorId);
   updateOperatorButtons();
   const route = parseRoute(location.hash);
-  if (operatorId === null && needsOperator(route)) message(OPERATOR_REQUIRED_MESSAGE, 'info');
+  const guidance = guidanceFor(route);
+  if (guidance) message(guidance.text, guidance.kind);
   else clearMessage();
 });
 
