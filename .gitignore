@@ -13,3 +13,6 @@ node_modules/
 
 # 実行時データ(DB・月次集計ファイル)
 data/
+
+# 実ブラウザ確認(npm run e2e)のスクリーンショット
+e2e-output/
