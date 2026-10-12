@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  businessMinutes, formatDateTime, formatMinutes, holdIntervals, isDateTimeString,
+  businessMinutes, formatDateTime, formatEpoch, formatMinutes, holdIntervals, isDateTimeString, laterOf,
   parseDateTime, workMinutes,
 } from '../src/domain/time.js';
 
@@ -157,4 +157,20 @@ test('書式: 分を H:mm にする(未計測は -)', () => {
   assert.equal(formatMinutes(325), '5:25');
   assert.equal(formatMinutes(1030), '17:10');
   assert.equal(formatMinutes(null), '-');
+});
+
+test('更新日時: laterOf は現在時刻が進んでいればそのまま、同じか前なら1ミリ秒後にする', () => {
+  assert.equal(laterOf('2026-10-12 09:00:01.000', '2026-10-12 09:00:00.000'), '2026-10-12 09:00:01.000');
+  assert.equal(laterOf('2026-10-12 09:00:00.000', '2026-10-12 09:00:00.000'), '2026-10-12 09:00:00.001');
+  assert.equal(laterOf('2026-10-12 08:59:59.000', '2026-10-12 09:00:00.000'), '2026-10-12 09:00:00.001');
+  // 桁上がり
+  assert.equal(laterOf('2026-10-12 09:00:00.000', '2026-10-12 09:00:59.999'), '2026-10-12 09:01:00.000');
+  assert.equal(laterOf('2026-01-01 00:00:00.000', '2025-12-31 23:59:59.999'), '2026-01-01 00:00:00.000');
+  assert.equal(laterOf('2025-12-31 00:00:00.000', '2025-12-31 23:59:59.999'), '2026-01-01 00:00:00.000');
+});
+
+test('更新日時: formatEpoch は parseDateTime の逆変換', () => {
+  for (const s of ['2026-10-12 09:30:15.123', '2028-02-29 23:59:59.999', '2026-01-01 00:00:00.000']) {
+    assert.equal(formatEpoch(parseDateTime(s)), s);
+  }
 });

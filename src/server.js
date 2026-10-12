@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { AppError, notFound, sendError, sendJson } from './http/errors.js';
 import { createRouter, readJson } from './http/router.js';
+import { formatDateTime } from './domain/time.js';
 
 const CONTENT_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -71,8 +72,11 @@ function serveStatic(req, res, pathname, publicDir) {
  * @param {{publicDir: string}} deps.config
  * @param {Array<{method: string, path: string, handler: Function}>} [deps.routes] APIのルート
  * @param {(line: string) => void} [deps.log] ログ出力(既定は標準出力)
+ * @param {() => string} [deps.now] 現在日時('YYYY-MM-DD HH:mm:ss.SSS')。テストで差し替える
  */
-export function createServer({ db, config, routes = [], log = (line) => console.log(line) }) {
+export function createServer({
+  db, config, routes = [], log = (line) => console.log(line), now = () => formatDateTime(new Date()),
+}) {
   const router = createRouter(routes);
 
   const server = http.createServer(async (req, res) => {
@@ -91,7 +95,7 @@ export function createServer({ db, config, routes = [], log = (line) => console.
       if (url.pathname === '/api' || url.pathname.startsWith('/api/')) {
         const matched = router.match(req.method, url.pathname);
         if (!matched) throw notFound();
-        const ctx = { req, res, db, url, params: matched.params, readJson: () => readJson(req) };
+        const ctx = { req, res, db, url, now, params: matched.params, readJson: () => readJson(req) };
         const result = await matched.handler(ctx);
         // ハンドラーが応答を終えていなければ、戻り値をJSONで返す
         if (!res.writableEnded) sendJson(res, result?.status ?? 200, result?.body ?? {});
