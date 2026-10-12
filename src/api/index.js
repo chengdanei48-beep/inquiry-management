@@ -1,7 +1,8 @@
 import { inquiryRoutes } from './inquiries.js';
 import { masterRoutes } from './masters.js';
+import { reportRoutes } from './reports.js';
 
-/** 全APIのルート。集計・CSV・月次保存はフェーズ5で追加する。 */
+/** 全APIのルート。 */
 export function createApiRoutes() {
-  return [...inquiryRoutes, ...masterRoutes];
+  return [...inquiryRoutes, ...masterRoutes, ...reportRoutes];
 }

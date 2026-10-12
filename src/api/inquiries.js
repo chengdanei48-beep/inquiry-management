@@ -11,8 +11,11 @@ import {
 } from '../domain/validation.js';
 import {
   findCategory, findEmployee, findInquiry, getDetail, getHistories, insertHistory,
-  insertInquiry, listInquiries, updateInquiryIfUnchanged,
+  insertInquiry, listAllInquiries, listInquiries, updateInquiryIfUnchanged,
 } from '../repo/inquiries.js';
+import { toCsv } from '../domain/csv.js';
+import { sendCsv } from '../http/respond.js';
+import { formatMinutes } from '../../public/js/report-tables.js';
 import { requireOperator } from './operator.js';
 
 const staleUpdate = () =>
@@ -60,6 +63,25 @@ export const inquiryRoutes = [
     method: 'GET',
     path: '/api/inquiries',
     handler: async ({ db, url }) => ({ body: listInquiries(db, parseInquiryListQuery(url.searchParams)) }),
+  },
+
+  {
+    // 一覧と同じ絞り込み・並び順で、条件に合う全件を出力する(page は無視する)。`:id` より先に登録する。
+    method: 'GET',
+    path: '/api/inquiries/export.csv',
+    handler: async ({ db, res, url, now }) => {
+      const items = listAllInquiries(db, parseInquiryListQuery(url.searchParams));
+      const rows = items.map((i) => [
+        i.id, i.title, i.body, i.category.name, i.requester.name, i.requester.dept, i.priority, i.status,
+        i.assignee ? i.assignee.name : '', i.receivedAt, i.completedAt ?? '', i.resolution ?? '',
+        formatMinutes(i.workMinutes, ''),
+      ]);
+      const csv = toCsv(
+        ['ID', '件名', '内容', 'カテゴリ', '依頼者', '部署', '優先度', 'ステータス', '担当者', '受付日時', '完了日時', '対応内容', '対応時間'],
+        rows,
+      );
+      sendCsv(res, `inquiries-${now().slice(0, 10).replaceAll('-', '')}.csv`, csv);
+    },
   },
 
   {
