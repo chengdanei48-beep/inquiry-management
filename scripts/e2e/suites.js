@@ -324,16 +324,16 @@ export async function reportsSuite({ d, check, baseUrl }) {
   await d.clickButton('表示');
   check('集計: 開始日が空だと「開始日を入力してください」', (await d.text('#r-from-error')) === '開始日を入力してください');
 
-  // URLを手で書き換えた、極端に広い期間(10年超)。以前は、集計に約34秒かかり、サーバー全体が止まった
+  // URLを手で書き換えた、極端に広い期間(20年超)。以前は、集計に約34秒かかり、サーバー全体が止まった
   await d.goto('#/reports?from=0100-01-01&to=9999-12-31');
-  await page.waitFor(`document.querySelector('#messages')?.textContent.includes('集計期間は10年以内にしてください')`);
-  check('集計: 10年を超える期間は、案内を出して、既定の期間に戻る(サーバーは止まらない)',
+  await page.waitFor(`document.querySelector('#messages')?.textContent.includes('集計期間は20年以内にしてください')`);
+  check('集計: 20年を超える期間は、案内を出して、既定の期間に戻る(サーバーは止まらない)',
     (await d.value('#r-from')) === `${today.slice(0, 8)}01` && (await d.value('#r-to')) === today);
   await d.setValue('#r-from', '2000-01-01');
   await d.setValue('#r-to', today);
   await d.clickButton('表示');
-  check('集計: 画面で10年を超える期間を指定すると、終了日の項目に「集計期間は10年以内にしてください」と出る',
-    (await d.text('#r-to-error')) === '集計期間は10年以内にしてください' && (await d.attr('#r-to', 'aria-invalid')) === 'true');
+  check('集計: 画面で20年を超える期間を指定すると、終了日の項目に「集計期間は20年以内にしてください」と出る',
+    (await d.text('#r-to-error')) === '集計期間は20年以内にしてください' && (await d.attr('#r-to', 'aria-invalid')) === 'true');
 
   await d.goto('#/reports?from=2020-01-01&to=2020-01-31');
   await page.waitFor(`document.querySelector('#view')?.textContent.includes('該当するデータはありません')`);
