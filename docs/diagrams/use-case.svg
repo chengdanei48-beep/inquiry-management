@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 720" width="1000" height="720" role="img" aria-labelledby="ttl desc">
+<title id="ttl">ユースケース図(問い合わせ管理システム)</title>
+<desc id="desc">対応担当者が14のユースケースを実行する。依頼者は対応担当者に連絡する。ステータス変更は完了時に対応内容の入力を含み、一覧のCSV出力は一覧の検索・絞り込みを拡張する。</desc>
+<style>
+  .t { font: 13px "Yu Gothic UI", "Meiryo", "Hiragino Sans", sans-serif; fill: #1f2933; }
+  .t.b { font-weight: 700; }
+  .t.s { font-size: 11px; fill: #3b4654; }
+  .t.g { font-size: 12px; font-weight: 700; fill: #3b4654; }
+  .uc { fill: #eef2ff; stroke: #3b6fd8; stroke-width: 1.5; }
+  .uc.sub { fill: #f8fafc; stroke: #8a94a3; stroke-dasharray: 4 3; }
+  .grp { fill: #fafbfc; stroke: #cfd6df; stroke-width: 1; }
+  .sys { fill: #fff; stroke: #1f2933; stroke-width: 2; }
+  .actor circle, .actor line { stroke: #1f2933; stroke-width: 2; fill: none; }
+  .assoc { stroke: #1f2933; stroke-width: 1.5; fill: none; }
+  .rel { stroke: #1f2933; stroke-width: 1.3; fill: none; stroke-dasharray: 6 4; marker-end: url(#arr); }
+</style>
+<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10" fill="none" stroke="#1f2933" stroke-width="1.5"/></marker></defs>
+<rect x="0" y="0" width="1000" height="720" fill="#fff"/>
+<rect x="220" y="20" width="765" height="670" rx="6" class="sys"/>
+<text x="602" y="44" text-anchor="middle" class="t b">問い合わせ管理システム</text>
+<rect x="240" y="55" width="730" height="325" rx="6" class="grp"/>
+<text x="254" y="73" class="t g">問い合わせの対応</text>
+<rect x="240" y="410" width="262" height="250" rx="6" class="grp"/>
+<text x="254" y="428" class="t g">集計・分析</text>
+<rect x="510" y="410" width="262" height="250" rx="6" class="grp"/>
+<text x="524" y="428" class="t g">マスタ・保守</text>
+<line x1="232" y1="105" x2="232" y2="625" class="assoc"/>
+<line x1="232" y1="105" x2="255" y2="105" class="assoc"/>
+<line x1="232" y1="175" x2="255" y2="175" class="assoc"/>
+<line x1="232" y1="245" x2="255" y2="245" class="assoc"/>
+<line x1="232" y1="315" x2="255" y2="315" class="assoc"/>
+<line x1="232" y1="475" x2="255" y2="475" class="assoc"/>
+<line x1="232" y1="535" x2="255" y2="535" class="assoc"/>
+<line x1="232" y1="595" x2="255" y2="595" class="assoc"/>
+<line x1="232" y1="140" x2="523" y2="140" class="assoc"/>
+<line x1="232" y1="210" x2="523" y2="210" class="assoc"/>
+<line x1="232" y1="280" x2="523" y2="280" class="assoc"/>
+<line x1="232" y1="350" x2="523" y2="350" class="assoc"/>
+<line x1="232" y1="505" x2="523" y2="505" class="assoc"/>
+<line x1="232" y1="565" x2="523" y2="565" class="assoc"/>
+<line x1="232" y1="625" x2="523" y2="625" class="assoc"/>
+<line x1="135" y1="330" x2="232" y2="330" class="assoc"/>
+<ellipse cx="375" cy="105" rx="120" ry="22" class="uc"/>
+<text x="375" y="110" text-anchor="middle" class="t">UC-01 問い合わせを登録する</text>
+<ellipse cx="375" cy="175" rx="120" ry="22" class="uc"/>
+<text x="375" y="180" text-anchor="middle" class="t">UC-02 一覧を検索・絞り込む</text>
+<ellipse cx="375" cy="245" rx="120" ry="22" class="uc"/>
+<text x="375" y="250" text-anchor="middle" class="t">UC-08 一覧をCSV出力する</text>
+<ellipse cx="375" cy="315" rx="120" ry="22" class="uc"/>
+<text x="375" y="320" text-anchor="middle" class="t">UC-03 詳細・履歴を確認する</text>
+<ellipse cx="375" cy="475" rx="120" ry="22" class="uc"/>
+<text x="375" y="480" text-anchor="middle" class="t">UC-09 集計を表とグラフで見る</text>
+<ellipse cx="375" cy="535" rx="120" ry="22" class="uc"/>
+<text x="375" y="540" text-anchor="middle" class="t">UC-10 集計をCSV出力する</text>
+<ellipse cx="375" cy="595" rx="120" ry="22" class="uc"/>
+<text x="375" y="600" text-anchor="middle" class="t">UC-11 月次集計を保存する</text>
+<ellipse cx="641" cy="140" rx="118" ry="22" class="uc"/>
+<text x="641" y="145" text-anchor="middle" class="t">UC-04 ステータスを変更する</text>
+<ellipse cx="641" cy="210" rx="118" ry="22" class="uc"/>
+<text x="641" y="215" text-anchor="middle" class="t">UC-05 担当者を割り当てる</text>
+<ellipse cx="641" cy="280" rx="118" ry="22" class="uc"/>
+<text x="641" y="285" text-anchor="middle" class="t">UC-06 コメントを追加する</text>
+<ellipse cx="641" cy="350" rx="118" ry="22" class="uc"/>
+<text x="641" y="355" text-anchor="middle" class="t">UC-07 内容を編集する</text>
+<ellipse cx="641" cy="505" rx="118" ry="22" class="uc"/>
+<text x="641" y="510" text-anchor="middle" class="t">UC-12 社員を管理する</text>
+<ellipse cx="641" cy="565" rx="118" ry="22" class="uc"/>
+<text x="641" y="570" text-anchor="middle" class="t">UC-13 カテゴリを管理する</text>
+<ellipse cx="641" cy="625" rx="118" ry="22" class="uc"/>
+<text x="641" y="630" text-anchor="middle" class="t">UC-14 サンプルデータを投入する</text>
+<ellipse cx="885" cy="140" rx="75" ry="22" class="uc sub"/>
+<text x="885" y="145" text-anchor="middle" class="t">対応内容を入力する</text>
+<line x1="759" y1="140" x2="810" y2="140" class="rel"/>
+<text x="784.5" y="129" text-anchor="middle" class="t s">«include»</text>
+<text x="784.5" y="158" text-anchor="middle" class="t s">完了時</text>
+<line x1="375" y1="223" x2="375" y2="197" class="rel"/>
+<text x="383" y="214" class="t s">«extend»</text>
+<text x="641" y="655" text-anchor="middle" class="t s">※ 画面なし(npm スクリプトで実行)</text>
+<g class="actor"><circle cx="110" cy="304" r="12"/><line x1="110" y1="316" x2="110" y2="354"/><line x1="88" y1="330" x2="132" y2="330"/><line x1="110" y1="354" x2="92" y2="382"/><line x1="110" y1="354" x2="128" y2="382"/></g>
+<text x="110" y="404" text-anchor="middle" class="t b">対応担当者</text>
+<g class="actor"><circle cx="110" cy="112" r="12"/><line x1="110" y1="124" x2="110" y2="162"/><line x1="88" y1="138" x2="132" y2="138"/><line x1="110" y1="162" x2="92" y2="190"/><line x1="110" y1="162" x2="128" y2="190"/></g>
+<text x="110" y="212" text-anchor="middle" class="t b">依頼者(社員)</text>
+<line x1="110" y1="224" x2="110" y2="286" class="rel"/>
+<text x="100" y="259" text-anchor="end" class="t s">連絡する</text>
+<text x="100" y="273" text-anchor="end" class="t s">(口頭・電話など)</text>
+<g transform="translate(20 480)">
+<text x="0" y="0" class="t g">凡例</text>
+<line x1="0" y1="18" x2="40" y2="18" class="assoc"/><text x="48" y="22" class="t s">アクターが実行する</text>
+<line x1="0" y1="42" x2="40" y2="42" class="rel"/><text x="48" y="46" class="t s">関係(include / extend / 連絡)</text>
+</g>
+</svg>
