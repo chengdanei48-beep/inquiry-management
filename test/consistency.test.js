@@ -200,3 +200,42 @@ test('実ブラウザ確認: Chrome の探索(CHROME_PATH を優先し、見つ�
   const none = findChrome({ CHROME_PATH: path.join(os.tmpdir(), 'no-such-chrome.exe'), LOCALAPPDATA: undefined });
   assert.ok(none === null || typeof none === 'string');
 });
+
+test('技術スタック: README・CLAUDE.md・要件定義書・API設計書・配備ファイルが、同じ内容(Node.js 24・EC2・systemd・HTTP 80)を記載している', () => {
+  const pkg = JSON.parse(read('package.json'));
+  const major = /(\d+)/.exec(pkg.engines.node)[1];
+  assert.equal(major, '24');
+
+  // Node.js のバージョンと、標準の node:sqlite
+  for (const file of [['README.md'], ['CLAUDE.md'], ['docs', 'requirements.md']]) {
+    const text = read(...file);
+    assert.match(text, new RegExp(`Node\.js[^\n]*v${major}`), `${file.join('/')} に Node.js v${major} の記載がない`);
+    assert.ok(text.includes('node:sqlite'), `${file.join('/')} に node:sqlite の記載がない`);
+  }
+
+  // AWS(EC2)でのデプロイ: 全ての主要な文書に記載がある
+  for (const file of [['README.md'], ['CLAUDE.md'], ['docs', 'requirements.md'], ['docs', 'api-design.md'], ['docs', 'deployment-decision.md'], ['docs', 'aws-deployment.md']]) {
+    assert.ok(read(...file).includes('EC2'), `${file.join('/')} に EC2 の記載がない`);
+  }
+  // README の技術スタックの節に、稼働環境(デプロイ)がある
+  const readme = read('README.md');
+  const stack = readme.slice(readme.indexOf('## 技術スタック'), readme.indexOf('## 起動とテスト'));
+  assert.ok(stack.length > 100, '技術スタックの節を読み取れなかった');
+  assert.match(stack, /AWS EC2/);
+  assert.match(stack, /Amazon Linux 2023/);
+  assert.ok(!/ローカルだけで動作する/.test(stack), '「ローカルだけで動作する」の記載が残っている(AWS のデプロイと矛盾)');
+
+  // 配備ファイルの設定が、手順書・技術スタックの記載と一致する
+  const setup = read('deploy', 'setup-ec2.sh');
+  const unit = read('deploy', 'inquiry-management.service');
+  assert.ok(setup.includes(`latest-v${major}.x`), 'setup-ec2.sh が、Node.js 24 系を取得していない');
+  assert.match(setup, /PORT=80\b/);
+  assert.match(setup, /NODE_LINK=\/opt\/node/);
+  assert.ok(unit.includes('ExecStart=/opt/node/bin/node src/main.js'));
+  assert.ok(unit.includes('EnvironmentFile=/etc/inquiry-management.env'));
+  assert.ok(setup.includes('/etc/inquiry-management.env'));
+  const guide = read('docs', 'aws-deployment.md');
+  assert.ok(guide.includes('Amazon Linux 2023') && guide.includes('t3.micro'));
+  assert.ok(guide.includes('deploy/setup-ec2.sh') || guide.includes('setup-ec2.sh'));
+  assert.ok(guide.includes(`v${pkg.version}`), '手順書のタグ(REF)が、現在のバージョンと一致しない');
+});

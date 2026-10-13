@@ -5,6 +5,8 @@
 ## 技術スタック
 Node.js (v24 以降) + SQLite(Node.js 標準の `node:sqlite`) + HTML / 素のJavaScript
 
+稼働環境: 既定はローカル(`npm start`)。課題の提出要件のため、AWS の EC2 1 台にもデプロイする(下記の課金ルールの例外。手順は docs/aws-deployment.md)。
+
 ### 課金ルール(厳守)
 課金が発生する技術・サービスは、原則として使わない。**既定は、ローカルだけで動作する構成(`npm start`)。**
 
