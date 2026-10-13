@@ -132,7 +132,8 @@ test('公開: 個人のメールアドレス・ローカルのパスが、リポ
   assert.ok(files.length > 40, `${files.length} 件しか調べていない`);
   const patterns = [
     // メールアドレス(GitHub の noreply・Anthropic の共同作者表記・例示用は除く)
-    /[A-Za-z0-9._%+-]+@(?!users\.noreply\.github\.com|noreply\.github\.com|anthropic\.com|example\.)[A-Za-z0-9.-]+\.[A-Za-z]{2,}/,
+    // (GitHub の Web 操作のコミッター noreply@github.com も、個人のメールではないため除く)
+    /\b(?!noreply@github\.com)[A-Za-z0-9._%+-]+@(?!users\.noreply\.github\.com|anthropic\.com|example\.)[A-Za-z0-9.-]+\.[A-Za-z]{2,}/,
     // Windows / Unix のホームディレクトリ
     /[A-Za-z]:\\Users\\/,
     /\/Users\/[a-z]/,

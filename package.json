@@ -12,6 +12,7 @@
     "start": "node src/main.js",
     "seed": "node scripts/seed.js",
     "e2e": "node scripts/e2e.js",
+    "publish:public": "node scripts/publish.js",
     "test": "node --test"
   }
 }
