@@ -23,11 +23,15 @@ https://github.com/user-attachments/assets/4d2f3b3b-0e14-4887-bd8e-3b899ecbf186
 
 ## 技術スタック
 
-- Node.js v24 以降(標準の `node:sqlite` を使用)
-- SQLite(ファイル DB)
-- HTML / 素のJavaScript(ブラウザは Chrome(最新版)を想定)
-
-課金が発生する技術・サービスは使わず、ローカルだけで動作する(課題の提出要件のため、AWS の EC2 1 台へのデプロイ手順を用意している: [docs/aws-deployment.md](docs/aws-deployment.md))。npm の依存パッケージは無い。
+| 層 | 技術 | 備考 |
+|---|---|---|
+| 実行環境 | Node.js v24 以降 | 標準の `node:http`・`node:sqlite`・`node:test`。外部の依存パッケージはない |
+| DB | SQLite(ファイル DB) | Node.js 標準の `node:sqlite` |
+| 画面 | HTML / 素のJavaScript | ブラウザは Chrome(最新版)を想定。外部の CDN は使わない |
+| 自動確認 | `node --test`(単体・API)、Chrome DevTools Protocol(実ブラウザの E2E) | 追加のライブラリなし |
+| 稼働環境(既定) | ローカル(`npm start`。localhost のみ・認証なし) | 課金が発生するサービスは使わない |
+| 稼働環境(デプロイ) | AWS EC2 1 台(手順書の構成: Amazon Linux 2023・t3.micro)。systemd で常駐。HTTP(80)+ Basic 認証 | 課題の提出要件。手順・費用・制限は [docs/aws-deployment.md](docs/aws-deployment.md) |
+| ソース管理 | Git / GitHub(Issue → 専用ブランチ → プルリクエスト) | |
 
 ## 起動とテスト
 

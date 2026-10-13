@@ -11,7 +11,7 @@ flowchart LR
   subgraph Browser["ブラウザ(Chrome)"]
     UI["画面 S-01〜S-05<br/>HTML + 素のJavaScript"]
   end
-  subgraph Server["Node.js サーバー(localhost:8080)"]
+  subgraph Server["Node.js サーバー(ローカル: localhost:8080 / AWS EC2: HTTP 80・Basic 認証)"]
     Static["静的ファイル配信"]
     API["REST API(JSON / CSV)"]
     Logic["業務ロジック<br/>状態遷移・営業時間計算・集計"]
@@ -30,6 +30,7 @@ flowchart LR
 | 画面 | HTML / 素のJavaScript | 表示と入力。入力検証はサーバー側でも行う |
 | API | Node.js 標準の `http`(外部依存なし) | 入力検証、状態遷移の判定、エラー応答 |
 | DB | SQLite(`node:sqlite`) | 永続化。SQLはプレースホルダ(`?`)で実行 |
+| 稼働環境 | 既定はローカル(`npm start`)。デプロイは AWS EC2 1 台(Amazon Linux 2023・systemd) | 外部公開は、認証(`APP_PASSWORD`)が必須。手順は [aws-deployment.md](aws-deployment.md) |
 
 ## 2. 画面とAPIの対応
 
