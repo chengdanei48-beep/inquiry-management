@@ -207,11 +207,23 @@ export function publish({
 
     if (!skipTests) {
       git(work, ['checkout', '-q', branch]);
+      // package.json の scripts.test(`node …`)を、シェルを使わずに、node で直接実行する(npm test と同じ内容)
+      const testScript = JSON.parse(fs.readFileSync(path.join(work, 'package.json'), 'utf8')).scripts?.test ?? '';
+      const testArgs = /^node\s+(.+)$/.exec(testScript);
+      if (!testArgs) {
+        throw new PublishError(`package.json の scripts.test が「node …」の形ではないため、テストを実行できません(--skip-tests で省略できます): ${testScript}`);
+      }
+      // 自動テストの実行中(テストランナーの子プロセス)から呼ばれても、入れ子のテストの失敗が親に隠れないよう、
+      // テストランナーの環境変数を引き継がない
+      const testEnv = { ...process.env };
+      delete testEnv.NODE_TEST_CONTEXT;
       try {
-        execFileSync('npm', ['test'], { cwd: work, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], shell: process.platform === 'win32', maxBuffer: 64 * 1024 * 1024 });
-        log('検証: 書き換え後の最新で、npm test が成功');
+        execFileSync(process.execPath, testArgs[1].split(/\s+/), {
+          cwd: work, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 64 * 1024 * 1024, env: testEnv,
+        });
+        log(`検証: 書き換え後の最新で、テスト(${testScript})が成功`);
       } catch (err) {
-        throw new PublishError(`書き換え後の最新で、npm test が失敗しました:\n${String(err.stdout ?? '').split('\n').slice(-15).join('\n')}`);
+        throw new PublishError(`書き換え後の最新で、テストが失敗しました(${testScript}):\n${String(err.stdout ?? '').split('\n').slice(-15).join('\n')}`);
       }
     }
 

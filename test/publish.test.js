@@ -240,3 +240,35 @@ test('スクリプト: 個人情報(メール・名前)を、スクリプト自�
   assert.ok(!/@gmail\.com|@outlook|@yahoo/i.test(source));
   assert.ok(/--push/.test(source) && /試し実行/.test(source));
 });
+
+test('テスト実行: 成功すれば反映し、失敗すれば反映しない。テストスクリプトが無ければ中止する(--skip-tests で省略可)', () => {
+  const pkg = (scripts) => JSON.stringify({ name: 'demo-app', version: '1.0.0', type: 'module', scripts });
+  const passing = "import { test } from 'node:test';\ntest('ok', () => {});\n";
+  const failing = "import { test } from 'node:test';\nimport assert from 'node:assert/strict';\ntest('ng', () => { assert.equal(1, 2); });\n";
+
+  // テストスクリプトが無い
+  let s = setup();
+  try {
+    assert.throws(() => s.run({ push: true, skipTests: false }), (e) => e instanceof PublishError && /scripts\.test/.test(e.message));
+    assert.equal(git(s.pub, ['for-each-ref']), '');
+    assert.equal(s.run({ push: true, skipTests: true }).pushed, true); // 省略すれば反映できる
+  } finally { s.cleanup(); }
+
+  // テストが成功する(書き換え後の最新で、node --test を直接実行する)
+  s = setup();
+  try {
+    s.commit('package.json', pkg({ test: 'node --test' }), 'add test script');
+    s.commit('ok.test.js', passing, 'add passing test');
+    const result = s.run({ push: true, skipTests: false });
+    assert.deepEqual([result.action, result.pushed], ['create', true]);
+  } finally { s.cleanup(); }
+
+  // テストが失敗する → 反映しない
+  s = setup();
+  try {
+    s.commit('package.json', pkg({ test: 'node --test' }), 'add test script');
+    s.commit('ng.test.js', failing, 'add failing test');
+    assert.throws(() => s.run({ push: true, skipTests: false }), (e) => e instanceof PublishError && /テストが失敗/.test(e.message));
+    assert.equal(git(s.pub, ['for-each-ref']), '');
+  } finally { s.cleanup(); }
+});
