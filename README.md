@@ -1,6 +1,6 @@
 # InquiryManagement(問い合わせ管理)
 
-[![version](https://img.shields.io/badge/version-1.0.0-blue)](CHANGELOG.md) [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![version](https://img.shields.io/badge/version-1.1.0-blue)](CHANGELOG.md) [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 社内ヘルプデスクに寄せられる問い合わせを、登録・一覧・ステータス管理・担当者割当・履歴で管理し、対応実績を集計・分析するアプリ。課題として作成した。
 
@@ -25,7 +25,7 @@ https://github.com/user-attachments/assets/1f4de6f9-e470-485c-9741-c49c170cc388
 - SQLite(ファイル DB)
 - HTML / 素のJavaScript(ブラウザは Chrome(最新版)を想定)
 
-課金が発生する技術・サービスは使わず、ローカルだけで動作する。npm の依存パッケージは無い。
+課金が発生する技術・サービスは使わず、ローカルだけで動作する(課題の提出要件のため、AWS の EC2 1 台へのデプロイ手順を用意している: [docs/aws-deployment.md](docs/aws-deployment.md))。npm の依存パッケージは無い。
 
 ## 起動とテスト
 
@@ -49,7 +49,11 @@ npm run e2e      # 実際の Chrome で、全画面の操作を自動確認す�
 
 | 変数 | 既定 | 内容 |
 |---|---|---|
-| `PORT` | `8080` | 待ち受けるポート(アドレスは `127.0.0.1` のみ) |
+| `PORT` | `8080` | 待ち受けるポート |
+| `HOST` | `127.0.0.1` | 待ち受けるアドレス。既定は localhost のみ。外部に公開するときだけ `0.0.0.0` を指定する(**`APP_PASSWORD` が無いと起動しない**) |
+| `APP_PASSWORD` | (なし) | 認証(Basic 認証)のパスワード(12 文字以上)。設定すると、全ての画面・API で認証を求める。`HOST` が localhost 以外のときは必須 |
+| `APP_USER` | `admin` | 認証のユーザー名 |
+| `ALLOWED_HOSTS` | (なし) | localhost 以外で受け付ける Host 名(カンマ区切り。`*` で全て)。外部に公開するときに指定する |
 | `DB_PATH` | `data/inquiry.db` | DBファイルの場所。月次集計の保存先は、このファイルと同じディレクトリの `reports/`(既定は `data/reports/YYYY-MM/`) |
 
 `data/` は Git に含めない。
@@ -81,7 +85,8 @@ Chrome を操作して、全画面の操作・入力検証・エラー表示・�
 | [画面設計書](docs/screen-design.md) | 画面・項目・操作・メッセージ。[画面サンプル](docs/mockups/screen-sample.html)(Chromeで開いて確認する) |
 | [API設計・DB定義](docs/api-design.md) | エンドポイント・エラー・DB定義(正)。[説明用の図解](docs/mockups/api-overview.html)(Chromeで開いて確認する) |
 | [受け入れ条件の照合表](docs/acceptance-check.md) | 受け入れ条件と、検証の根拠(テスト・実ブラウザ確認)の対応 |
-| [判断記録: コンテナ化・デプロイ](docs/deployment-decision.md) | コンテナ化・デプロイを行わない理由と、必要になる場合の変更 |
+| [AWS へのデプロイ手順](docs/aws-deployment.md) | EC2 1 台へのデプロイ(費用・手順・確認・後始末・制限) |
+| [判断記録: コンテナ化・デプロイ](docs/deployment-decision.md) | AWS(EC2)にデプロイする理由・構成の選択・本番で必要な対策 |
 
 ## 構成
 
@@ -99,13 +104,14 @@ docs/           設計書
 
 ## バージョンとライセンス
 
-- バージョン: **1.0.0**([変更履歴](CHANGELOG.md))。バージョンは `package.json` の `version` が正で、起動時のログにも表示される([Semantic Versioning](https://semver.org/lang/ja/) に従う)。
+- バージョン: **1.1.0**([変更履歴](CHANGELOG.md))。バージョンは `package.json` の `version` が正で、起動時のログにも表示される([Semantic Versioning](https://semver.org/lang/ja/) に従う)。
 - ライセンス: [MIT](LICENSE)
 
 ## 利用上の注意
 
-- 認証を持たない。**「操作する担当者」は、選ぶだけの簡易方式**で、なりすましを防げない。そのため、サーバーは `localhost` のみで待ち受ける。インターネットやLANに公開して運用しない(理由と、必要になる場合の変更は [判断記録](docs/deployment-decision.md))。
-- コンテナ化・サーバーへのデプロイは、行っていない。
+- 既定では、サーバーは `localhost` のみで待ち受け、認証を持たない。**「操作する担当者」は、選ぶだけの簡易方式**で、なりすましを防げない。
+- 外部に公開する(AWS へのデプロイ)ときは、共通のパスワード(Basic 認証)を必須とし、**パスワードが無いと起動しない**。ただし、通信は HTTP のままで、ユーザーごとの認証・総当たり対策・自動バックアップはない。**サンプルデータだけ**を入れ、実データは入れない(制限と、本番で必要な対策は [判断記録](docs/deployment-decision.md))。
+- コンテナ化は、行っていない。
 
 ## 公開版について
 

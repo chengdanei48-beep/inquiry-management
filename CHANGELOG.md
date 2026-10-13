@@ -3,6 +3,20 @@
 このアプリのバージョンは [Semantic Versioning](https://semver.org/lang/ja/) に従う。
 バージョンは `package.json` の `version` が正で、起動時のログにも表示される。
 
+## [1.1.0] - 2026-10-13
+
+AWS(EC2)へのデプロイに対応する(課題の提出必須要件)。`npm start` の既定の動作(localhost のみ・認証なし)は、変えていない。
+
+### 追加
+- 環境変数 `HOST`・`APP_PASSWORD`・`APP_USER`・`ALLOWED_HOSTS`。`APP_PASSWORD` を設定すると、全ての画面・API に Basic 認証を求める
+- **`HOST` が localhost 以外のとき、`APP_PASSWORD`(12 文字以上)が無ければ、起動しない**(認証なしで公開する事故の防止)
+- ヘルスチェック `GET /healthz`
+- `deploy/`: EC2 用のセットアップスクリプト(`setup-ec2.sh`)と、systemd のユニットファイル
+- `docs/aws-deployment.md`: AWS へのデプロイ手順(費用・確認・後始末・制限)
+
+### 変更
+- 判断記録(`docs/deployment-decision.md`)・要件定義書・CLAUDE.md の課金ルール: 課題の提出要件のため、AWS の EC2 1 台を例外として許可
+
 ## [1.0.0] - 2026-10-12
 
 最初の安定版。要件定義書(`docs/requirements.md`)の全機能と、受け入れ条件(`docs/acceptance-check.md`)を満たす。

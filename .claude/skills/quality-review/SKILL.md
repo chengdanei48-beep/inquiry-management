@@ -42,7 +42,8 @@ npm test    # node --test(Node.js 標準のテストランナー)
 
 ### 課金ルール
 
-- `package.json` の依存が全て無料のオープンソースである。クラウドや有料 API を使っていない。
+- `package.json` の依存が全て無料のオープンソースである。有料 API を使っていない。クラウドは、課題の提出要件(AWS の EC2 1 台。docs/aws-deployment.md)に限る。
+- 外部に公開する設定(`HOST` が localhost 以外)で、認証(`APP_PASSWORD`)なしでは起動しない。AWS の認証情報・パスワードがリポジトリに無い。
 
 ### docs ⇔ 実装の差異(docs を正とする)
 

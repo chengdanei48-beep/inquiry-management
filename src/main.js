@@ -5,7 +5,14 @@ import { createServer } from './server.js';
 import { APP_NAME, readVersion } from './version.js';
 import { createApiRoutes } from './api/index.js';
 
-const config = loadConfig();
+let config;
+try {
+  config = loadConfig();
+} catch (err) {
+  // 設定の誤り(例: 認証なしで外部に公開しようとした)は、スタックトレースを出さず、理由だけを表示する
+  console.error(`設定が正しくありません: ${err.message}`);
+  process.exit(1);
+}
 const db = openDatabase(config.dbPath);
 ensureInitialCategories(db); // カテゴリの初期値(F-09)。カテゴリが空のときだけ作成する
 const server = createServer({ db, config, routes: createApiRoutes() });
@@ -21,7 +28,8 @@ server.on('error', (err) => {
 });
 
 server.listen(config.port, config.host, () => {
-  console.log(`起動しました: ${APP_NAME} v${readVersion()} http://localhost:${server.address().port}/ (DB: ${config.dbPath})`);
+  const authNote = config.auth ? `認証あり(ユーザー: ${config.auth.user})` : '認証なし(localhost のみ)';
+  console.log(`起動しました: ${APP_NAME} v${readVersion()} http://${config.host === '0.0.0.0' ? 'localhost' : config.host}:${server.address().port}/ ${authNote} (DB: ${config.dbPath})`);
 });
 
 function shutdown() {

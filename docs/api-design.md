@@ -61,6 +61,8 @@ flowchart LR
 | 文字数 | 自由入力は50文字以内(前後の空白を除いて数える) |
 | トランザクション | 問い合わせの更新と履歴の追加は、1トランザクションで行う |
 | ポート・DB | 環境変数 `PORT`(既定 8080)、`DB_PATH`(既定 `data/inquiry.db`)で上書きできる |
+| 公開・認証 | 環境変数 `HOST`(既定 `127.0.0.1`)、`APP_PASSWORD`(設定すると、全ての画面・API に Basic 認証。`HOST` が localhost 以外のときは必須)、`APP_USER`(既定 `admin`)、`ALLOWED_HOSTS`(localhost 以外で許可する Host 名。`*` で全て)。認証のエラーは、401 とヘッダー `WWW-Authenticate: Basic` を返す |
+| ヘルスチェック | `GET /healthz`(認証なし)は、`{"status":"ok"}` を返す。データには触れない |
 
 ### ステータスコード
 
