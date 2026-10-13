@@ -13,9 +13,11 @@
 
 ## デモ動画
 
-[![デモ動画(画像をクリックすると再生できます)](docs/demo/thumbnail.jpg)](docs/demo/demo.mp4)
+https://github.com/user-attachments/assets/1f4de6f9-e470-485c-9741-c49c170cc388
 
-画像をクリックすると、動画のページが開き、再生できる(約 2 分 34 秒・3.4 MB。動画ファイル: [docs/demo/demo.mp4](docs/demo/demo.mp4))。
+再生できない場合は、下の画像をクリックして、動画のページで再生してください(約 2 分 34 秒・3.4 MB。動画ファイル: [docs/demo/demo.mp4](docs/demo/demo.mp4))。
+
+[![デモ動画(画像をクリックすると再生できます)](docs/demo/thumbnail.jpg)](docs/demo/demo.mp4)
 
 ## 技術スタック
 
