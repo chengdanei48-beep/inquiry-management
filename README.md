@@ -13,14 +13,14 @@
 
 ## デモ動画
 
-AWS(EC2)にデプロイしたアプリを、ブラウザで操作している動画です(約 1 分 59 秒・1.2 MB)。
+AWS(EC2)にデプロイしたアプリを、ブラウザで操作している動画です。下は、**2 倍速のプレビュー**(約 1 分・音声なし)です。アドレスバーに、AWS の URL が映っています。
 
-- **動画のファイル**: [demo.mp4(ダウンロードして再生してください)](https://github.com/chengdanei48-beep/inquiry-management/raw/master/docs/demo/demo.mp4)
-- GitHub のファイルページ上では、動画を再生できません(GitHub の仕様)。クリックするとダウンロードされるので、ダウンロードしたファイルを再生してください。
+![デモ動画のプレビュー(AWS 上での操作・2 倍速)](docs/demo/preview.webp)
+
+- **完全な動画**(約 1 分 59 秒・1.2 MB・音声あり): [demo.mp4(ダウンロードして再生してください)](https://github.com/chengdanei48-beep/inquiry-management/raw/master/docs/demo/demo.mp4)
+- GitHub のファイルページ上では、mp4 を再生できません(GitHub の仕様)。クリックするとダウンロードされるので、ダウンロードしたファイルを再生してください。
 
 一覧・新規登録(入力エラーの表示を含む)・マスタ管理(社員の追加)・集計の画面を操作しています。アドレスバーの IP アドレスは、評価の後にサーバーを削除するため、無効になります(デプロイの手順は [docs/aws-deployment.md](docs/aws-deployment.md))。
-
-[![デモ動画の画面(クリックすると、動画ファイルをダウンロードします)](docs/demo/thumbnail.jpg)](https://github.com/chengdanei48-beep/inquiry-management/raw/master/docs/demo/demo.mp4)
 
 ## 技術スタック
 
