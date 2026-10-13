@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -21,8 +22,40 @@ const SECURITY_HEADERS = {
     "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'",
 };
 
-// DNSリバインディング対策: localhost 宛のリクエストだけを受け付ける
+// DNSリバインディング対策: 既定では、localhost 宛のリクエストだけを受け付ける。
+// 外部に公開するとき(ALLOWED_HOSTS)だけ、指定された Host 名(または *)も受け付ける
 const ALLOWED_HOSTNAMES = new Set(['localhost', '127.0.0.1', '[::1]']);
+
+function isHostAllowed(hostHeader, config) {
+  const hostname = hostnameOf(hostHeader).toLowerCase();
+  if (ALLOWED_HOSTNAMES.has(hostname)) return true;
+  const extra = config.allowedHosts ?? [];
+  return extra.includes('*') || (hostname !== '' && extra.includes(hostname));
+}
+
+// Basic 認証。パスワードの比較は、長さが漏れないよう、ハッシュにして、定数時間で行う
+const sha256 = (text) => crypto.createHash('sha256').update(text).digest();
+
+function isAuthorized(req, auth) {
+  const header = req.headers.authorization;
+  if (typeof header !== 'string' || !/^Basic /i.test(header)) return false;
+  let decoded;
+  try {
+    decoded = Buffer.from(header.slice(6).trim(), 'base64').toString('utf8');
+  } catch {
+    return false;
+  }
+  return crypto.timingSafeEqual(sha256(decoded), sha256(`${auth.user}:${auth.password}`));
+}
+
+function sendUnauthorized(res) {
+  res.writeHead(401, {
+    'Content-Type': 'text/plain; charset=utf-8',
+    'WWW-Authenticate': 'Basic realm="inquiry-management", charset="UTF-8"',
+    ...SECURITY_HEADERS,
+  });
+  res.end('認証が必要です');
+}
 
 function hostnameOf(hostHeader) {
   if (!hostHeader) return '';
@@ -88,8 +121,21 @@ export function createServer({
     });
 
     try {
-      if (!ALLOWED_HOSTNAMES.has(hostnameOf(req.headers.host))) {
+      if (!isHostAllowed(req.headers.host, config)) {
         throw new AppError(400, 'VALIDATION_ERROR', 'リクエストを受け付けられません');
+      }
+
+      // ヘルスチェック(認証なし。内容は固定で、データには触れない)
+      if (url.pathname === '/healthz' && (req.method === 'GET' || req.method === 'HEAD')) {
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', ...SECURITY_HEADERS });
+        res.end(req.method === 'HEAD' ? undefined : JSON.stringify({ status: 'ok' }));
+        return;
+      }
+
+      // 認証(設定されているときだけ)。画面もAPIも、全てに適用する
+      if (config.auth && !isAuthorized(req, config.auth)) {
+        sendUnauthorized(res);
+        return;
       }
 
       if (url.pathname === '/api' || url.pathname.startsWith('/api/')) {

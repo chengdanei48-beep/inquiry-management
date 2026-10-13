@@ -1,0 +1,31 @@
+# systemd のユニットファイル(EC2 の Amazon Linux 2023 用)。
+# deploy/setup-ec2.sh が /etc/systemd/system/ に配置する。
+[Unit]
+Description=inquiry-management (問い合わせ管理)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=inquiry
+Group=inquiry
+WorkingDirectory=/opt/inquiry-management
+# HOST・PORT・APP_USER・APP_PASSWORD・ALLOWED_HOSTS・DB_PATH(パスワードを含むため、root だけが読める)
+EnvironmentFile=/etc/inquiry-management.env
+ExecStart=/opt/node/bin/node src/main.js
+Restart=on-failure
+RestartSec=3
+
+# 80 番ポート(1024 未満)で待ち受けるための権限だけを与える(root では動かさない)
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+
+# データ(SQLite のファイル・月次集計)は /var/lib/inquiry-management に置く。それ以外は書き込めない
+StateDirectory=inquiry-management
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
