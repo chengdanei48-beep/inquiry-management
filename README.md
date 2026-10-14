@@ -19,7 +19,7 @@ https://github.com/user-attachments/assets/4d2f3b3b-0e14-4887-bd8e-3b899ecbf186
 
 再生できない場合は、[動画ファイル(demo.mp4)をダウンロード](https://github.com/chengdanei48-beep/inquiry-management/raw/master/docs/demo/demo.mp4)して再生してください(GitHub のファイルページ上では、mp4 を再生できません)。
 
-一覧・新規登録(入力エラーの表示を含む)・マスタ管理(社員の追加)・集計の画面を操作しています。アドレスバーの IP アドレスは、評価の後にサーバーを削除するため、無効になります(デプロイの手順は [docs/aws-deployment.md](docs/aws-deployment.md))。
+一覧・新規登録(入力エラーの表示を含む)・マスタ管理(社員の追加)・集計の画面を操作しています。**このデプロイ先の AWS 環境は、評価の終了後(2026/10/14)に削除しました。**動画に映る IP アドレスは、現在は無効です。デプロイの手順は [docs/aws-deployment.md](docs/aws-deployment.md) にあり、同じ手順で、再度デプロイできます。
 
 ## 技術スタック
 
